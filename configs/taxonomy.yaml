@@ -1,0 +1,26 @@
+# Class hierarchy for Cascaded-SolarNet.
+#
+# Stage 1 separates `healthy` from everything else (early exit).
+# Stage 2 routes a defect to one of the families below.
+# Stage 3 runs that family's fine-grained CNN.
+#
+# Label strings must match `anomaly_class` in InfraredSolarModules'
+# module_metadata.json exactly. Regroup classes here; no code changes needed.
+
+healthy: No-Anomaly
+
+families:
+  Electrical:
+    - Cell
+    - Cell-Multi
+    - Diode
+    - Diode-Multi
+    - Hot-Spot
+    - Hot-Spot-Multi
+  Environmental:
+    - Soiling
+    - Shadowing
+    - Vegetation
+  Structural:
+    - Cracking
+    - Offline-Module
