@@ -68,7 +68,7 @@ python scripts/make_splits.py          # stratified 70/15/15, seed 42 -> data/sp
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/techwack/cascaded-cnn/blob/feat/colab-notebook/notebooks/colab_train.ipynb)
 
 [`notebooks/colab_train.ipynb`](notebooks/colab_train.ipynb) clones the repo, runs the tests,
-downloads the dataset (upload your own `kaggle.json`), trains every node plus the baselines,
+downloads the dataset (paste your own Kaggle API token), trains every node plus the baselines,
 and evaluates the full cascade. Use a T4 GPU runtime.
 
 ## Train
