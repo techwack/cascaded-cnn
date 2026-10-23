@@ -5,3 +5,4 @@ data/
 runs/
 *.pt
 .ipynb_checkpoints/
+runs_nophoto/
