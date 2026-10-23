@@ -53,10 +53,17 @@ class CascadedSolarNet(nn.Module):
         self.class_offsets = class_offsets
         self.healthy_index = healthy_index
 
-    @torch.no_grad()
-    def predict(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
-        """Route a batch through the cascade.
+    @staticmethod
+    def _probs(model: nn.Module, x: torch.Tensor, tta: bool) -> torch.Tensor:
+        """Softmax probabilities, optionally averaged over flip views (test-time augmentation)."""
+        views = [x] + ([x.flip(-1), x.flip(-2), x.flip(-1).flip(-2)] if tta else [])
+        return torch.stack([F.softmax(model(v), dim=1) for v in views]).mean(0)
 
+    @torch.no_grad()
+    def predict(self, x: torch.Tensor, threshold: float = 0.5, tta: bool = False) -> dict[str, torch.Tensor]:
+        """Route a batch through the cascade (hard routing, with early exit).
+
+        `threshold` is the triage P(defect) above which an image continues to stage 2.
         Returns global class predictions plus the per-stage decisions, so
         evaluation can attribute errors to the stage that made them.
         """
@@ -64,12 +71,32 @@ class CascadedSolarNet(nn.Module):
         pred = torch.full((n,), self.healthy_index, dtype=torch.long, device=x.device)
         fam_pred = torch.full((n,), -1, dtype=torch.long, device=x.device)
 
-        is_defect = self.triage(x).argmax(1) == 1
+        is_defect = self._probs(self.triage, x, tta)[:, 1] > threshold
         idx = is_defect.nonzero(as_tuple=True)[0]
         if idx.numel():  # early exit: healthy panels never reach stage 2
-            fam_pred[idx] = self.family(x[idx]).argmax(1)
+            fam_pred[idx] = self._probs(self.family, x[idx], tta).argmax(1)
             for f_i, fam in enumerate(self.family_names):
                 sub = idx[fam_pred[idx] == f_i]
                 if sub.numel():
-                    pred[sub] = self.class_offsets[fam] + self.fine[fam](x[sub]).argmax(1)
+                    pred[sub] = self.class_offsets[fam] + self._probs(self.fine[fam], x[sub], tta).argmax(1)
         return {"pred": pred, "is_defect": is_defect, "family": fam_pred}
+
+    @torch.no_grad()
+    def predict_soft(self, x: torch.Tensor, tta: bool = False) -> dict[str, torch.Tensor]:
+        """Soft routing: P(class) = P(defect) * P(family) * P(class | family).
+
+        A wrong stage-2 guess can still be outvoted by the other stages, but every
+        fine CNN runs on every image, so there is no early exit and it is slower.
+        Assumes the healthy class is global index 0 and families follow it in order.
+        """
+        n = x.shape[0]
+        p_def = self._probs(self.triage, x, tta)[:, 1]
+        p_fam = self._probs(self.family, x, tta)
+        total = 1 + sum(m.head[-1].out_features for m in self.fine.values())
+        probs = torch.zeros(n, total, device=x.device)
+        probs[:, self.healthy_index] = 1 - p_def
+        for f_i, fam in enumerate(self.family_names):
+            pf = self._probs(self.fine[fam], x, tta)
+            o = self.class_offsets[fam]
+            probs[:, o:o + pf.shape[1]] = (p_def * p_fam[:, f_i])[:, None] * pf
+        return {"pred": probs.argmax(1), "probs": probs}

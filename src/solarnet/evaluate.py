@@ -80,6 +80,11 @@ def main() -> None:
     ap.add_argument("--taxonomy", default="configs/taxonomy.yaml")
     ap.add_argument("--split", default="test", choices=["val", "test"])
     ap.add_argument("--flat", action="store_true", help="also evaluate the flat baseline")
+    ap.add_argument("--tta", action="store_true", help="average predictions over flip views")
+    ap.add_argument("--soft", action="store_true", help="soft routing: multiply stage probabilities (no early exit)")
+    ap.add_argument("--tune-threshold", action="store_true",
+                    help="pick the triage threshold on the validation split (hard routing only)")
+    ap.add_argument("--out", default="results.json", help="results file name inside the run directory")
     args = ap.parse_args()
 
     cfg, tax = load_config(args.config), Taxonomy.load(args.taxonomy)
@@ -91,12 +96,27 @@ def main() -> None:
 
     torch.set_num_threads(1)
     cascade = load_cascade(cfg, tax, run_dir)
-    out = cascade.predict(x)
-    results = {"split": args.split, "classes": tax.classes, "cascade": {
+
+    threshold = 0.5
+    if args.tune_threshold and not args.soft:
+        vd = splits["val"]
+        vx, vy = preprocess(to_batch(vd.images), stats, up), vd.global_targets(tax)
+        scored = [(f1_score(vy, cascade.predict(vx, t, args.tta)["pred"].numpy(), average="macro", zero_division=0), t)
+                  for t in np.arange(0.2, 0.801, 0.05)]
+        threshold = float(max(scored)[1])
+        print(f"triage threshold tuned on val: {threshold:.2f}")
+
+    if args.soft:
+        run = lambda b: cascade.predict_soft(b, args.tta)  # noqa: E731
+    else:
+        run = lambda b: cascade.predict(b, threshold, args.tta)  # noqa: E731
+    out = run(x)
+    results = {"split": args.split, "classes": tax.classes,
+               "settings": {"tta": args.tta, "soft": args.soft, "triage_threshold": threshold}, "cascade": {
         **metrics(y, out["pred"].numpy(), tax.classes),
-        "stages": stage_errors(y, out, tax),
+        **({} if args.soft else {"stages": stage_errors(y, out, tax)}),
         "params": n_params(cascade),
-        "latency_ms_per_image": latency_ms(cascade.predict, x),
+        "latency_ms_per_image": latency_ms(lambda b: run(b)["pred"], x),
     }}
 
     if args.flat:
@@ -111,11 +131,12 @@ def main() -> None:
             r = results[name]
             print(f"{name:8s} acc {r['accuracy']:.4f}  macro-F1 {r['macro_f1']:.4f}  kappa {r['kappa']:.4f}  "
                   f"params {r['params']:,}  latency {r['latency_ms_per_image']:.2f} ms")
-    print("cascade stage errors:", json.dumps(results["cascade"]["stages"]))
+    if "stages" in results["cascade"]:
+        print("cascade stage errors:", json.dumps(results["cascade"]["stages"]))
 
-    with open(run_dir / "results.json", "w") as f:
+    with open(run_dir / args.out, "w") as f:
         json.dump(results, f, indent=1)
-    print(f"wrote {run_dir / 'results.json'}")
+    print(f"wrote {run_dir / args.out}")
 
 
 if __name__ == "__main__":
