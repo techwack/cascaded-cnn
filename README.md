@@ -64,7 +64,7 @@ python scripts/make_splits.py          # stratified 70/15/15, seed 42 -> data/sp
 
 ## Run on Colab
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/techwack/cascaded-cnn/blob/feat/colab-notebook/notebooks/colab_train.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/techwack/cascaded-cnn/blob/main/notebooks/colab_train.ipynb)
 
 [`notebooks/colab_train.ipynb`](notebooks/colab_train.ipynb) clones the repo, runs the tests,
 downloads the dataset from the original GitHub repo, trains every node plus the baselines,
