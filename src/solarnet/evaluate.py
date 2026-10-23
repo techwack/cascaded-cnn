@@ -74,6 +74,12 @@ def n_params(m: torch.nn.Module) -> int:
     return sum(p.numel() for p in m.parameters())
 
 
+def batched(fn, x: torch.Tensor, size: int = 250) -> dict[str, torch.Tensor]:
+    """Run `fn` over chunks of `x` and concatenate the dict outputs (keeps RAM bounded)."""
+    parts = [fn(x[i:i + size]) for i in range(0, len(x), size)]
+    return {k: torch.cat([p[k] for p in parts]) for k in parts[0]}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default="configs/default.yaml")
@@ -101,7 +107,7 @@ def main() -> None:
     if args.tune_threshold and not args.soft:
         vd = splits["val"]
         vx, vy = preprocess(to_batch(vd.images), stats, up), vd.global_targets(tax)
-        scored = [(f1_score(vy, cascade.predict(vx, t, args.tta)["pred"].numpy(), average="macro", zero_division=0), t)
+        scored = [(f1_score(vy, batched(lambda b, t=t: cascade.predict(b, t, args.tta), vx)["pred"].numpy(), average="macro", zero_division=0), t)
                   for t in np.arange(0.2, 0.801, 0.05)]
         threshold = float(max(scored)[1])
         print(f"triage threshold tuned on val: {threshold:.2f}")
@@ -110,7 +116,7 @@ def main() -> None:
         run = lambda b: cascade.predict_soft(b, args.tta)  # noqa: E731
     else:
         run = lambda b: cascade.predict(b, threshold, args.tta)  # noqa: E731
-    out = run(x)
+    out = batched(run, x)
     results = {"split": args.split, "classes": tax.classes,
                "settings": {"tta": args.tta, "soft": args.soft, "triage_threshold": threshold}, "cascade": {
         **metrics(y, out["pred"].numpy(), tax.classes),
@@ -122,7 +128,7 @@ def main() -> None:
     if args.flat:
         flat = load_node(cfg, tax, "flat", run_dir)
         with torch.no_grad():
-            pred = flat(x).argmax(1).numpy()
+            pred = batched(lambda b: {"pred": flat(b).argmax(1)}, x)["pred"].numpy()
         results["flat"] = {**metrics(y, pred, tax.classes), "params": n_params(flat),
                            "latency_ms_per_image": latency_ms(flat, x)}
 
