@@ -12,17 +12,19 @@ class StageCNN(nn.Module):
     With the native 40x24 input, three blocks leave a 5x3 map before pooling.
     """
 
-    def __init__(self, channels: list[int], num_classes: int, dropout: float = 0.0, in_ch: int = 1):
+    def __init__(self, channels: list[int], num_classes: int, dropout: float = 0.0, in_ch: int = 1,
+                 convs_per_block: int = 1):
         super().__init__()
         layers, prev = [], in_ch
         for ch in channels:
-            layers += [
-                nn.Conv2d(prev, ch, 3, padding=1, bias=False),
-                nn.BatchNorm2d(ch),
-                nn.ReLU(inplace=True),
-                nn.MaxPool2d(2),
-            ]
-            prev = ch
+            for _ in range(convs_per_block):
+                layers += [
+                    nn.Conv2d(prev, ch, 3, padding=1, bias=False),
+                    nn.BatchNorm2d(ch),
+                    nn.ReLU(inplace=True),
+                ]
+                prev = ch
+            layers.append(nn.MaxPool2d(2))
         self.features = nn.Sequential(*layers)
         self.head = nn.Sequential(nn.Flatten(), nn.Dropout(dropout), nn.Linear(prev, num_classes))
         for m in self.modules():

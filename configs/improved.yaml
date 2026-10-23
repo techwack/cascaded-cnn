@@ -1,0 +1,33 @@
+# Improved: 80x48 upsampling, two convs per block, no photometric jitter, longer schedule.
+data:
+  root: data/InfraredSolarModules     # folder containing module_metadata.json
+  splits_file: data/splits.json       # written by scripts/make_splits.py
+  seed: 42
+  val_frac: 0.15
+  test_frac: 0.15
+  upsample: 2                         # 1 = native 40x24; 2 = 80x48 (optional, see report 8.5)
+
+augment:
+  hflip: 0.5
+  vflip: 0.5
+  brightness: 0.0
+  contrast: 0.0
+  noise_std: 0.0
+
+train:
+  batch_size: 64
+  epochs: 150
+  lr: 5.0e-4
+  weight_decay: 1.0e-4
+  patience: 25                        # early stopping on val macro-F1
+  weighted_loss: true                 # w_r = N / (K * n_r)
+  num_workers: 2
+  out_dir: runs_improved
+
+# Per-stage CNN widths (poster, "Class Hierarchy" panel).
+# Each entry is a Conv3x3-BN-ReLU-MaxPool block; head is GlobalAvgPool + FC.
+models:
+  triage:     {channels: [32, 64],       dropout: 0.0, convs_per_block: 2}   # CNN-1: No-Anomaly vs Defect
+  family:     {channels: [64, 128, 64],  dropout: 0.3, convs_per_block: 2}   # CNN-2: Electrical / Environmental / Structural
+  fine:       {channels: [128, 256, 128], dropout: 0.4, convs_per_block: 2}  # CNN-3a/b/c: one per family
+  flat:       {channels: [128, 256, 128], dropout: 0.4, convs_per_block: 2}  # single-stage 12-class baseline

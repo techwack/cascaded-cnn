@@ -6,3 +6,4 @@ runs/
 *.pt
 .ipynb_checkpoints/
 runs_nophoto/
+runs_improved/

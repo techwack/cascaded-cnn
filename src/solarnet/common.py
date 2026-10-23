@@ -39,7 +39,8 @@ def model_kind(node: str) -> str:
 
 def build_model(cfg: dict, tax: Taxonomy, node: str) -> StageCNN:
     spec = cfg["models"][model_kind(node)]
-    return StageCNN(spec["channels"], len(tax.node_classes(node)), spec["dropout"])
+    return StageCNN(spec["channels"], len(tax.node_classes(node)), spec["dropout"],
+                    convs_per_block=spec.get("convs_per_block", 1))
 
 
 def save_checkpoint(path: Path, model: torch.nn.Module, node: str, classes: list[str], stats: dict,
