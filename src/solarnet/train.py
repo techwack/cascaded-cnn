@@ -20,7 +20,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.metrics import f1_score
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 
 from .common import augment, build_model, device, load_config, preprocess, save_checkpoint, seed_everything, to_batch
 from .data import class_weights, load_splits
@@ -46,13 +46,18 @@ def train_node(cfg: dict, tax: Taxonomy, node: str, splits: dict, stats: dict) -
     print(f"[{node}] classes={classes}")
     print(f"[{node}] train={len(y_tr)} val={len(y_va)} counts={np.bincount(y_tr, minlength=len(classes)).tolist()}")
 
+    sampler = None
+    if tc.get("sampler", "none") == "sqrt":  # rare classes drawn more often: weight ~ 1/sqrt(class count)
+        counts = np.bincount(y_tr, minlength=len(classes)).astype(np.float64)
+        sample_w = torch.from_numpy((1.0 / np.sqrt(np.maximum(counts, 1)))[y_tr])
+        sampler = WeightedRandomSampler(sample_w, num_samples=len(y_tr), replacement=True)
     loader = DataLoader(TensorDataset(to_batch(x_tr), torch.from_numpy(y_tr)),
-                        batch_size=tc["batch_size"], shuffle=True, drop_last=False)
+                        batch_size=tc["batch_size"], shuffle=sampler is None, sampler=sampler, drop_last=False)
     x_va_t = to_batch(x_va)
 
     model = build_model(cfg, tax, node).to(dev)
     weight = torch.from_numpy(class_weights(y_tr, len(classes))).to(dev) if tc["weighted_loss"] else None
-    loss_fn = nn.CrossEntropyLoss(weight=weight)
+    loss_fn = nn.CrossEntropyLoss(weight=weight, label_smoothing=tc.get("label_smoothing", 0.0))
     opt = torch.optim.Adam(model.parameters(), lr=tc["lr"], weight_decay=tc["weight_decay"])
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode="max", factor=0.5, patience=tc["patience"] // 3)
 
