@@ -121,11 +121,12 @@ the input shape. Flipping both ways already gives the 180° rotation.
 | `improved.yaml` (80x48, 2 convs/block, no jitter) | Cascade | 0.760 | 0.582 | 0.656 | 0.895 |
 | | Flat CNN | 0.768 | 0.653 | 0.689 | n/a |
 | | Cascade + flip TTA | 0.764 | 0.582 | 0.660 | n/a |
+| `improved2.yaml` (improved + sqrt-balanced sampler + label smoothing) | Cascade | 0.755 | 0.576 | 0.648 | 0.891 |
 
 Raw metrics are in [`results/`](results/). Notes:
 
 - Photometric jitter hurt: thermal defects are defined by absolute brightness.
-- With `no_photometric.yaml` the cascade beat the flat CNN on accuracy but not macro-F1. With `improved.yaml` the **flat CNN is slightly better on every accuracy metric** (and has 1.48M vs 4.87M params); the cascade's advantage is speed (55% of images exit at Stage 1). Work in progress: soft routing, triage-threshold tuning and a balanced-sampling config (`improved2.yaml`).
+- With `no_photometric.yaml` the cascade beat the flat CNN on accuracy but not macro-F1. With `improved.yaml` the **flat CNN is slightly better on every accuracy metric** (and has 1.48M vs 4.87M params); the cascade's advantage is speed (55% of images exit at Stage 1). Tried without gain: triage-threshold tuning (val-optimal threshold was 0.50, identical result) and balanced sampling + label smoothing (`improved2.yaml`, slightly worse). In progress: soft routing and larger Stage 1/2 networks.
 - Largest error source is Stage 2 (wrong family), then missed defects at Stage 1.
 - The random forest has not been run locally (a scikit-learn DLL is blocked by Windows Application Control); run it on Colab. Latencies in `results/improved*.json` were measured while the GPU was busy training and are not reliable.
 - 93% in the literature is not a 12-class figure we can compare against directly; see the report for the binary vs multi-class gap.
