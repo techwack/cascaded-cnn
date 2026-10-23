@@ -15,10 +15,10 @@ augment:
 
 train:
   batch_size: 64
-  epochs: 60
-  lr: 1.0e-3
+  epochs: 100
+  lr: 5.0e-4
   weight_decay: 1.0e-4
-  patience: 10                        # early stopping on val macro-F1
+  patience: 20                        # early stopping on val macro-F1
   weighted_loss: true                 # w_r = N / (K * n_r)
   num_workers: 2
   out_dir: runs
