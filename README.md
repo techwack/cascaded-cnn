@@ -110,6 +110,24 @@ therefore count against the cascade. Results go to `runs/results.json`:
 90° rotations are left out because the images are 40×24, so a quarter turn would change
 the input shape. Flipping both ways already gives the 180° rotation.
 
+## Results (test split, 3,000 images, seed 42, single run)
+
+| Config | Model | Accuracy | Macro-F1 | Kappa | Stage-1 binary acc |
+|---|---|---|---|---|---|
+| `default.yaml` (brightness/contrast/noise jitter) | Cascade | 0.617 | 0.368 | 0.461 | 0.810 |
+| | Flat CNN | 0.476 | 0.379 | 0.357 | n/a |
+| `no_photometric.yaml` (flips only) | Cascade | 0.711 | 0.509 | 0.583 | 0.860 |
+| | Flat CNN | 0.685 | 0.571 | 0.586 | n/a |
+| `improved.yaml` (80x48, 2 convs/block, no jitter) | Cascade | 0.760 | 0.582 | 0.656 | 0.895 |
+
+Raw metrics are in [`results/`](results/). Notes:
+
+- Photometric jitter hurt: thermal defects are defined by absolute brightness.
+- The cascade beats the flat CNN on accuracy but not on macro-F1 (rare classes such as Soiling and Hot-Spot are still weak).
+- Largest error source is Stage 2 (wrong family), then missed defects at Stage 1.
+- The flat baseline and the random forest for `improved.yaml` have not been run yet. Latency in `results/improved_cascade_only.json` was measured while the GPU was busy and is not reliable.
+- 93% in the literature is not a 12-class figure we can compare against directly; see the report for the binary vs multi-class gap.
+
 ## Experiment plan
 
 1. Baselines: random forest, flat CNN (`--node flat`), and published EfficientNet+SVM numbers.
