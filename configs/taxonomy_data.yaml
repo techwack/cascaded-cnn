@@ -1,0 +1,17 @@
+# Data-driven families (see scripts/find_grouping.py)
+healthy: No-Anomaly
+families:
+  GroupA:
+  - Cell
+  - Cell-Multi
+  - Soiling
+  - Vegetation
+  - Cracking
+  GroupB:
+  - Diode
+  - Diode-Multi
+  - Offline-Module
+  GroupC:
+  - Hot-Spot
+  - Hot-Spot-Multi
+  - Shadowing
