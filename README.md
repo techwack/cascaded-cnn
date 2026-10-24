@@ -122,11 +122,12 @@ the input shape. Flipping both ways already gives the 180° rotation.
 | | Flat CNN | 0.768 | 0.653 | 0.689 | n/a |
 | | Cascade + flip TTA | 0.764 | 0.582 | 0.660 | n/a |
 | `improved2.yaml` (improved + sqrt-balanced sampler + label smoothing) | Cascade | 0.755 | 0.576 | 0.648 | 0.891 |
+| **`improved3.yaml`** (improved + larger Stage 1/2 CNNs) | **Cascade** | **0.796** | **0.639** | **0.714** | **0.938** |
 
 Raw metrics are in [`results/`](results/). Notes:
 
 - Photometric jitter hurt: thermal defects are defined by absolute brightness.
-- With `no_photometric.yaml` the cascade beat the flat CNN on accuracy but not macro-F1. With `improved.yaml` the **flat CNN is slightly better on every accuracy metric** (and has 1.48M vs 4.87M params); the cascade's advantage is speed (55% of images exit at Stage 1). Tried without gain: triage-threshold tuning (val-optimal threshold was 0.50, identical result) and balanced sampling + label smoothing (`improved2.yaml`, slightly worse). In progress: soft routing and larger Stage 1/2 networks.
+- With `no_photometric.yaml` the cascade beat the flat CNN on accuracy but not macro-F1. With `improved.yaml` the **flat CNN is slightly better on every accuracy metric** (and has 1.48M vs 4.87M params); the cascade's advantage is speed (55% of images exit at Stage 1). Tried without gain: triage-threshold tuning (val-optimal threshold was 0.50, identical result) and balanced sampling + label smoothing (`improved2.yaml`, slightly worse). Larger Stage 1/2 networks (`improved3.yaml`) helped most: Stage-1 missed defects fell 233 -> 108, and the cascade now beats the improved flat CNN on accuracy (0.796 vs 0.768) and kappa (0.714 vs 0.689) but not macro-F1 (0.639 vs 0.653). Stage 2 (wrong family, ~300 errors) is still the largest error source. In progress: soft routing.
 - Largest error source is Stage 2 (wrong family), then missed defects at Stage 1.
 - The random forest has not been run locally (a scikit-learn DLL is blocked by Windows Application Control); run it on Colab. Latencies in `results/improved*.json` were measured while the GPU was busy training and are not reliable.
 - 93% in the literature is not a 12-class figure we can compare against directly; see the report for the binary vs multi-class gap.
