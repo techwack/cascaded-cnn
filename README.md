@@ -132,6 +132,23 @@ Raw metrics are in [`results/`](results/). Notes:
 - The random forest has not been run locally (a scikit-learn DLL is blocked by Windows Application Control); run it on Colab. Latencies in `results/improved*.json` were measured while the GPU was busy training and are not reliable.
 - 93% in the literature is not a 12-class figure we can compare against directly; see the report for the binary vs multi-class gap.
 
+## Status and who is doing what
+
+**Best so far:** `improved3.yaml`, cascade test accuracy 0.796, macro-F1 0.639, kappa 0.714, Stage-1 binary accuracy 0.938 (see Results). The 12-class result is far below the 93% quoted in the literature; that figure most likely refers to the binary healthy-vs-defect task.
+
+**Where the errors are** (`improved3`, 613 errors on 3,000 test images): Stage 2 wrong family 300, Stage 3 wrong subtype 126, Stage 1 missed defects 108, Stage 1 false alarms 79. Stage 2 is the bottleneck.
+
+| Area | Status |
+|---|---|
+| Stage 3 (electrical, environmental, structural) | Trained with `improved.yaml`; reused unchanged by `improved3.yaml`. Val macro-F1: 0.786 / 0.822 / 0.955. No need to retrain unless trying to improve Electrical. |
+| Stage 1 and 2 (triage, family) | Purvee: experiments on larger/longer Stage 1 and 2 networks. |
+| Data-driven family grouping | Running (`scripts/run_datagroup.sh`, `configs/datagroup.yaml`, `configs/taxonomy_data.yaml`); result not in yet. |
+| Random forest baseline | Not run locally (blocked DLL on one machine); run it on Colab. |
+
+Trained checkpoints (`*.pt`) and `runs*/` are git-ignored, so they are not in the repo. Ask for them if you need to evaluate the full cascade without retraining.
+
+To evaluate the full cascade after training: `python -m solarnet.evaluate --config configs/improved3.yaml`
+
 ## Experiment plan
 
 1. Baselines: random forest, flat CNN (`--node flat`), and published EfficientNet+SVM numbers.
