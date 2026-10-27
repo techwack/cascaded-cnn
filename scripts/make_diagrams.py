@@ -92,6 +92,35 @@ def stage3(fname):
     plt.close(fig)
 
 
+def overall(fname):
+    """Overall cascade (replacement for report Figure 1), using the implemented design."""
+    fig, ax = plt.subplots(figsize=(10.5, 9.4))
+    ax.set_xlim(0, 10.5); ax.set_ylim(0, 9.4); ax.axis("off")
+    cx = 4.6
+    box(ax, cx, 8.9, 6.4, 0.65, "INPUT\nSingle-channel IR image, 40 x 24 px (upsampled x2 to 80 x 48)", WHITE, 8, True)
+    arrow(ax, cx, 8.58, cx, 8.0)
+    box(ax, cx, 7.45, 5.4, 1.0, "STAGE 1  |  CNN-1  (binary triage)\n3 blocks of 2 x Conv3x3 + BN + ReLU + MaxPool (64, 128, 128)\nGlobal Avg Pool > Dropout > FC (2)", GREY, 7.6)
+    arrow(ax, cx + 2.7, 7.45, 8.0, 7.45, "No-Anomaly")
+    box(ax, 9.0, 7.45, 1.7, 0.8, "No-Anomaly\nSTOP\n(early exit)", LIGHT, 7.5, True)
+    arrow(ax, cx, 6.93, cx, 6.05)
+    ax.text(cx + 0.12, 6.5, "Defect", ha="left", fontsize=7.5, style="italic")
+    box(ax, cx, 5.5, 5.4, 1.0, "STAGE 2  |  CNN-2  (fault-family classifier)\n3 blocks of 2 x Conv3x3 + BN + ReLU + MaxPool (128, 256, 128)\nGlobal Avg Pool > Dropout > FC (3)", GREY, 7.6)
+    xs = [1.9, 4.6, 7.3]
+    specs = [("CNN-3a  ELECTRICAL", "6 classes", ["Cell", "Cell-Multi", "Diode", "Diode-Multi", "Hot-Spot", "Hot-Spot-Multi"]),
+             ("CNN-3b  ENVIRONMENTAL", "3 classes", ["Soiling", "Shadowing", "Vegetation"]),
+             ("CNN-3c  STRUCTURAL", "2 classes", ["Cracking", "Offline-Module"])]
+    for x, (t, n, cls) in zip(xs, specs):
+        arrow(ax, cx + (x - cx) * 0.4, 4.98, x, 4.35)
+        box(ax, x, 3.95, 2.5, 0.75, f"STAGE 3  |  {t}\n({n}, same backbone)", GREY, 7.2)
+        h = 0.27 * len(cls) + 0.25
+        arrow(ax, x, 3.57, x, 3.2)
+        box(ax, x, 3.18 - h / 2, 2.2, h, "\n".join(cls), WHITE, 7.2)
+        arrow(ax, x, 3.18 - h, x, 0.95)
+    box(ax, cx, 0.55, 7.6, 0.7, "FINAL LABEL: 1 of 12 classes (No-Anomaly + 11 defect types)", GREY, 8.2, True)
+    fig.savefig(OUT / fname, dpi=220, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     cnn("STAGE 1  |  CNN-1  (binary triage)", "Decides No-Anomaly vs Defect; No-Anomaly exits early",
@@ -99,6 +128,7 @@ def main() -> None:
     cnn("STAGE 2  |  CNN-2  (fault-family classifier)", "Routes each defect to one of three families",
         [128, 256, 128], 0.4, "FC (3)", ["Electrical", "Environmental", "Structural"], "stage2_cnn2.png")
     stage3("stage3_specialists.png")
+    overall("overall_cascade.png")
     print("wrote", sorted(p.name for p in OUT.glob("*.png")))
 
 
