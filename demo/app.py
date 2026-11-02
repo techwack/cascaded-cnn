@@ -67,7 +67,9 @@ class Demo:
     def __init__(self, config: str, run_dir: str | None, taxonomy: str):
         self.cfg = load_config(config)
         self.tax = Taxonomy.load(taxonomy)
-        self.net = load_cascade(self.cfg, self.tax, Path(run_dir or self.cfg["train"]["out_dir"]))
+        self.net = load_cascade(
+            self.cfg, self.tax, Path(run_dir or self.cfg["train"]["out_dir"])
+        )
         saved = json.load(open(self.cfg["data"]["splits_file"]))
         self.stats, self.up = saved["stats"], self.cfg["data"]["upsample"]
 
@@ -153,11 +155,10 @@ class Demo:
         }
 
     def upload(self, data: bytes) -> dict:
-        img = (
-            Image.open(io.BytesIO(data))
-            .convert("L")
-            .resize((IMG_W, IMG_H), Image.BILINEAR)
-        )
+        img = Image.open(io.BytesIO(data)).convert("L")
+        # BOX averages each source block exactly, so an enlarged dataset image maps back to its original pixels.
+        shrinking = img.width >= IMG_W and img.height >= IMG_H
+        img = img.resize((IMG_W, IMG_H), Image.BOX if shrinking else Image.BILINEAR)
         out = self.trace(np.asarray(img, dtype=np.float32) / 255.0)
         return {**out, "truth": None, "correct": None, "id": "upload"}
 
@@ -220,7 +221,11 @@ def main() -> None:
     )
     ap.add_argument("--config", default="configs/improved3.yaml")
     ap.add_argument("--taxonomy", default="configs/taxonomy.yaml")
-    ap.add_argument("--run-dir", default=None, help="checkpoint folder (default: the config's out_dir)")
+    ap.add_argument(
+        "--run-dir",
+        default=None,
+        help="checkpoint folder (default: the config's out_dir)",
+    )
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
 
