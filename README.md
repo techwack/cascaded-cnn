@@ -123,6 +123,7 @@ the input shape. Flipping both ways already gives the 180° rotation.
 | | Cascade + flip TTA | 0.764 | 0.582 | 0.660 | n/a |
 | `improved2.yaml` (improved + sqrt-balanced sampler + label smoothing) | Cascade | 0.755 | 0.576 | 0.648 | 0.891 |
 | **`improved3.yaml`** (improved + larger Stage 1/2 CNNs) | **Cascade** | **0.796** | **0.639** | **0.714** | **0.938** |
+| `datagroup.yaml` (improved3 sizes + data-driven families, `taxonomy_data.yaml`) | Cascade | 0.798 | 0.646 | 0.717 | 0.941 |
 
 Raw metrics are in [`results/`](results/). Notes:
 
@@ -142,7 +143,7 @@ Raw metrics are in [`results/`](results/). Notes:
 |---|---|
 | Stage 3 (electrical, environmental, structural) | Trained with `improved.yaml`; reused unchanged by `improved3.yaml`. Val macro-F1: 0.786 / 0.822 / 0.955. No need to retrain unless trying to improve Electrical. |
 | Stage 1 and 2 (triage, family) | Purvee: experiments on larger/longer Stage 1 and 2 networks. |
-| Data-driven family grouping | Running (`scripts/run_datagroup.sh`, `configs/datagroup.yaml`, `configs/taxonomy_data.yaml`); result not in yet. |
+| Data-driven family grouping | Done (`scripts/run_datagroup.sh`). Stage-2 errors fell 300 -> 116 but Stage-3 errors rose 126 -> 313 (the hard confusions moved into the 5-class family), so net accuracy is only 0.798 vs 0.796 (single seed, within noise). |
 | Random forest baseline | Not run locally (blocked DLL on one machine); run it on Colab. |
 
 Trained checkpoints (`*.pt`) and `runs*/` are git-ignored, so they are not in the repo. Ask for them if you need to evaluate the full cascade without retraining.
