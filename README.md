@@ -162,6 +162,8 @@ python scripts/predict.py --image my_module.jpg         # any image
 
 The figure is saved to `demo_out/`.
 
+Browser version (animated, pick a class and press Run): `python scripts/make_demo_html.py`, then open `demo_out/demo.html`.
+
 ## Experiment plan
 
 1. Baselines: random forest, flat CNN (`--node flat`), and published EfficientNet+SVM numbers.
