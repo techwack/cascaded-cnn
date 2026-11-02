@@ -164,6 +164,14 @@ The figure is saved to `demo_out/`.
 
 Browser version (animated, pick a class and press Run): `python scripts/make_demo_html.py`, then open `demo_out/demo.html`.
 
+Live server version, which also lets you upload your own image or jump to a misclassified one:
+
+```bash
+python demo/app.py        # then open http://127.0.0.1:8000
+```
+
+Each stage's probabilities are shown, and stages skipped by the early exit are marked. Runs locally on CPU.
+
 ## Experiment plan
 
 1. Baselines: random forest, flat CNN (`--node flat`), and published EfficientNet+SVM numbers.
