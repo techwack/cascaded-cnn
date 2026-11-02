@@ -162,6 +162,15 @@ python scripts/predict.py --image my_module.jpg         # any image
 
 The figure is saved to `demo_out/`.
 
+Interactive version in the browser, using the same checkpoints:
+
+```bash
+python demo/app.py        # then open http://127.0.0.1:8000
+```
+
+Pick a test image by class, jump to a misclassified one, or upload your own image. Each stage's
+probabilities are shown, and stages skipped by the early exit are marked. Runs locally on CPU.
+
 ## Experiment plan
 
 1. Baselines: random forest, flat CNN (`--node flat`), and published EfficientNet+SVM numbers.
