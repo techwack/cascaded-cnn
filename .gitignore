@@ -14,3 +14,4 @@ datagroup_run.*
 
 # trained Stage 3 checkpoints shared with teammates
 !checkpoints/**/*.pt
+demo_out/

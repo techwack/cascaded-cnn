@@ -150,6 +150,18 @@ Trained checkpoints (`*.pt`) and `runs*/` are git-ignored, so they are not in th
 
 To evaluate the full cascade after training: `python -m solarnet.evaluate --config configs/improved3.yaml`
 
+## Live demo
+
+Watch an image go through the cascade, with each stage's confidence bars (needs trained checkpoints, see `checkpoints/`):
+
+```bash
+python scripts/predict.py --sample 5                    # random test images
+python scripts/predict.py --class Hot-Spot --sample 3   # a specific class
+python scripts/predict.py --image my_module.jpg         # any image
+```
+
+The figure is saved to `demo_out/`.
+
 ## Experiment plan
 
 1. Baselines: random forest, flat CNN (`--node flat`), and published EfficientNet+SVM numbers.
