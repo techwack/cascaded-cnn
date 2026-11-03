@@ -182,6 +182,7 @@ def build():
     s += [table(rows, [3.6, 2.4, 3.8, 3.8, 2.6]), Spacer(1, 6), Image(str(ch["perclass"]), 15.5 * cm, 6.9 * cm)]
 
     rf = json.load(open(RES / "random_forest.json"))
+    ps = json.load(open(RES / "pretrained_svm.json"))
     s.append(P("2. Comparison with the Base Papers", H2))
     s.append(P("We re-checked the literature at the primary sources. Two points matter for any comparison. First, the dataset paper itself "
                "(Millendorf et al., ICLR 2020 workshop) reports <b>no model accuracies</b>; the numbers our earlier survey attributed to it "
@@ -197,18 +198,22 @@ def build():
             ["Preprints and listings (SSRN Hyperband CNN; diffusion + ViT)", "Hyperband-tuned CNN; transformer", "12 classes, repeated k-fold CV (SSRN)", "98.75%; 92.78%", "<b>Not verified</b> (listings only)"],
             ["<b>Ours: cascade (data-driven families)</b>", "Five small CNNs, trained from scratch", "12 classes, single stratified 70/15/15 hold-out", f"{pct(dg['accuracy'])} accuracy, macro-F1 {dg['macro_f1']:.3f}", "Our results"],
             ["Ours: Stage 1 only", "Binary triage CNN", "Healthy vs defect, same hold-out", pct(binary_acc(R['datagroup'])), "Our results"],
-            ["Ours: flat CNN / Random Forest", "Same building blocks / raw pixels", "12 classes, same hold-out", f"{pct(fl['accuracy'])} / {pct(rf['accuracy'])}", "Our results"]]
+            ["Ours: flat CNN / Random Forest", "Same building blocks / raw pixels", "12 classes, same hold-out", f"{pct(fl['accuracy'])} / {pct(rf['accuracy'])}", "Our results"],
+            ["Ours: Duranay-style baseline on our split", "EfficientNet-B0 (ImageNet) 1280-d features + RBF SVM (no NCA, last layer only)", "12 classes, same hold-out",
+             f"{pct(ps['accuracy'])} accuracy, macro-F1 {ps['macro_f1']:.3f}; binary {pct(ps['binary_accuracy'])}", "Our results"]]
     s += [table(rows, [3.9, 3.6, 3.5, 3.0, 2.2], bold_rows=(8,)), Spacer(1, 6)]
     s.append(P("How to read this", H2))
     for t in [
         f"<b>Binary triage.</b> Our Stage 1 reaches {pct(binary_acc(R['datagroup']))}. That is above Alves et al. (92.5%, cross-validated) and below the multi-scale transfer-learning CNN (97.32%). "
         "It is a competitive result for a small network trained from scratch, but it is a single hold-out run, so we claim parity with the 92.5% to 93% range and not a new best.",
-        f"<b>12 classes.</b> Our {pct(dg['accuracy'])} is <b>below</b> the published 12-class figures (84.0% Random Forest, 85% to 88% for ensembles, 93.93% for EfficientNet features with an SVM). We did not beat them, and we did not reach the 93% ceiling or the 95% target in our proposal.",
+        f"<b>12 classes.</b> Our {pct(dg['accuracy'])} is <b>below</b> the published 12-class figures (84.0% Random Forest, 85% to 88% for ensembles, 93.93% for EfficientNet features with an SVM). On the published protocols we did not beat them, and we did not reach the 93% ceiling or the 95% target in our proposal. "
+        f"But a Duranay-style pipeline (pretrained EfficientNet-B0 features and an SVM) run on <b>our</b> split scored only {pct(ps['accuracy'])} (macro-F1 {ps['macro_f1']:.3f}, binary {pct(ps['binary_accuracy'])}), "
+        f"below our cascade ({pct(dg['accuracy'])}, macro-F1 {dg['macro_f1']:.3f}, binary {pct(binary_acc(R['datagroup']))}). This suggests the gap to the published 93.93% is largely due to the evaluation protocol (cross-validation with near-duplicate images), and possibly to details we did not replicate such as selecting 17,000 multi-layer features with NCA, rather than to our model being weaker. It does not prove it.",
         f"<b>Why the numbers are not like-for-like.</b> Duranay uses 10-fold cross-validation and ImageNet-pretrained features; ours is one fixed hold-out split and models trained from scratch. We also measured overlap between our splits: about 7% of test images have a near-identical training image (distance below 0.5; 96% of those share the label) and about 54% have a close one (distance below 1; 78% share the label). "
         "Random fold splits would put such near-duplicates on both sides and raise cross-validated scores. This overlap cannot explain the whole gap, though: on our split a raw-pixel Random Forest scores "
         f"{pct(rf['accuracy'])} and a raw-pixel 1-nearest-neighbour 62.4%, against the 84.0% that Corley et al. report for a Random Forest. How that figure was obtained is not stated, so the cause of that gap is unknown.",
-        f"<b>What we can say.</b> Under our stricter fixed hold-out, the cascade improves on the flat CNN ({pct(fl['accuracy'])}) by about 3 points and on a raw-pixel Random Forest ({pct(rf['accuracy'])}) by about 18 points. Our contribution is the cascade design and the ablation and error analysis (which stage causes which errors), not a new accuracy record.",
-        "<b>To make the comparison fair</b>, the next step is to run our cascade and flat CNN under the same 10-fold cross-validation, and to run the EfficientNet-B0 + NCA + SVM pipeline on our split.",
+        f"<b>What we can say.</b> Under our fixed hold-out, the cascade is slightly ahead of a pretrained-feature SVM, and it improves on the flat CNN ({pct(fl['accuracy'])}) by about 3 points and on a raw-pixel Random Forest ({pct(rf['accuracy'])}) by about 18 points. This is a Duranay-style baseline, not an exact replication (they select 17,000 features with NCA from several layers). Our contribution is the cascade design and the ablation and error analysis (which stage causes which errors), not a new accuracy record.",
+        "<b>To make the comparison fully fair</b>, the next step is to run our cascade and flat CNN under the same 10-fold cross-validation, and to replicate the full NCA feature-selection pipeline.",
     ]:
         s.append(P("- " + t))
     s.append(P("Sources: Duranay, Electronics 12(21):4397 (mdpi.com/2079-9292/12/21/4397); Corley et al., arXiv:2503.02128; Alves et al., Renewable Energy 179:502-516 (abstract via library record); "

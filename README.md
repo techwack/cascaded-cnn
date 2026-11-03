@@ -124,6 +124,8 @@ the input shape. Flipping both ways already gives the 180° rotation.
 | `improved2.yaml` (improved + sqrt-balanced sampler + label smoothing) | Cascade | 0.755 | 0.576 | 0.648 | 0.891 |
 | **`improved3.yaml`** (improved + larger Stage 1/2 CNNs) | **Cascade** | **0.796** | **0.639** | **0.714** | **0.938** |
 | `datagroup.yaml` (improved3 sizes + data-driven families, `taxonomy_data.yaml`) | Cascade | 0.798 | 0.646 | 0.717 | 0.941 |
+| Duranay-style baseline (ImageNet EfficientNet-B0 features + RBF SVM, `scripts/pretrained_baseline.py`) | SVM | 0.787 | 0.640 | 0.689 | 0.904 |
+| Raw-pixel Random Forest (Colab, first run) | RF | 0.616 | 0.337 | 0.324 | n/a |
 
 Raw metrics are in [`results/`](results/). Notes:
 
