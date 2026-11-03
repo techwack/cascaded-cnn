@@ -27,7 +27,7 @@ def load(name):
     return json.load(open(RES / f"{name}.json"))
 
 
-R = {k: load(k) for k in ["default", "no_photometric", "improved", "improved2", "improved3", "datagroup"]}
+R = {k: load(k) for k in ["default", "no_photometric", "improved", "improved2", "improved3", "datagroup", "pretrained"]}
 CLASSES = R["improved3"]["classes"]
 
 
@@ -42,6 +42,7 @@ CFG = [  # (label, key, model)
     ("Improved\n(80x48, deeper)", "improved", "cascade"),
     ("Improved3\n(bigger S1/S2)", "improved3", "cascade"),
     ("Data-driven\nfamilies", "datagroup", "cascade"),
+    ("Pretrained\nEfficientNet-B0", "pretrained", "cascade"),
 ]
 
 
@@ -80,7 +81,7 @@ def charts(tmp: Path) -> dict:
     fig, ax = plt.subplots(figsize=(7.2, 3.0))
     keys = [("stage1_missed_defects", "Stage 1: missed defect", "#c92a2a"), ("stage1_false_alarms", "Stage 1: false alarm", "#f08c00"),
             ("stage2_wrong_family", "Stage 2: wrong family", "#1c7ed6"), ("stage3_wrong_subtype", "Stage 3: wrong subtype", "#2b8a3e")]
-    names = [("Default", "default"), ("No jitter", "no_photometric"), ("Improved", "improved"), ("Improved3", "improved3"), ("Data-driven", "datagroup")]
+    names = [("Default", "default"), ("No jitter", "no_photometric"), ("Improved", "improved"), ("Improved3", "improved3"), ("Data-driven", "datagroup"), ("Pretrained", "pretrained")]
     left = np.zeros(len(names))
     for k, lab, col in keys:
         v = np.array([R[n]["cascade"]["stages"][k] for _, n in names])
@@ -134,6 +135,7 @@ def build():
                             bottomMargin=1.7 * cm, title="Cascaded-SolarNet: Results, Comparison and Conclusion",
                             author="Divyamshi Jain, Syed Mohammad Ghouse, Purvee Singh")
     s = []
+    pr, prf = R["pretrained"]["cascade"], R["pretrained"]["flat"]
     i3, dg, imp, fl = R["improved3"]["cascade"], R["datagroup"]["cascade"], R["improved"]["cascade"], R["improved"]["flat"]
 
     s += [P("Cascaded-SolarNet: Results, Comparison with Base Papers and Conclusion", H1),
@@ -141,15 +143,15 @@ def build():
             "All numbers are measured on the same held-out test split of 3,000 images (stratified 70/15/15, seed 42), single run per configuration. "
             "Code, configs and raw metrics: github.com/techwack/cascaded-cnn.", SM),
           P("1. Results", H2)]
-    s.append(P(f"The best cascade reaches <b>{pct(dg['accuracy'])}</b> accuracy, macro-F1 <b>{dg['macro_f1']:.3f}</b> and Cohen's kappa "
-               f"<b>{dg['kappa']:.3f}</b> on the 12-class problem (data-driven families), and <b>{pct(binary_acc(R['datagroup']))}</b> accuracy "
-               f"on the Stage 1 healthy-versus-defect decision. With the semantic families (Electrical, Environmental, Structural) the "
-               f"'improved3' configuration reaches {pct(i3['accuracy'])} accuracy and macro-F1 {i3['macro_f1']:.3f}."))
+    s.append(P(f"The best result is the <b>pretrained cascade</b> (an ImageNet EfficientNet-B0 under each of the five stages): <b>{pct(pr['accuracy'])}</b> accuracy, macro-F1 <b>{pr['macro_f1']:.3f}</b>, "
+               f"Cohen's kappa <b>{pr['kappa']:.3f}</b> on the 12-class problem, and <b>{pct(binary_acc(R['pretrained']))}</b> on the Stage 1 healthy-versus-defect decision. "
+               f"The best cascade trained from scratch (data-driven families) reaches {pct(dg['accuracy'])} accuracy and macro-F1 {dg['macro_f1']:.3f}; "
+               f"with the semantic families (Electrical, Environmental, Structural) the 'improved3' configuration reaches {pct(i3['accuracy'])}."))
     rows = [["Configuration", "Model", "Accuracy", "Macro-F1", "Kappa", "Stage 1 binary acc."]]
     names = {"default": "Default (brightness/contrast/noise jitter)", "no_photometric": "No photometric jitter (flips only)",
              "improved": "Improved: 80x48 input, 2 convs/block", "improved2": "Improved2: + balanced sampling, label smoothing",
-             "improved3": "Improved3: + larger Stage 1/2 CNNs", "datagroup": "Data-driven family grouping"}
-    for k in ["default", "no_photometric", "improved", "improved2", "improved3", "datagroup"]:
+             "improved3": "Improved3: + larger Stage 1/2 CNNs", "datagroup": "Data-driven family grouping", "pretrained": "Pretrained: ImageNet EfficientNet-B0 under every stage"}
+    for k in ["default", "no_photometric", "improved", "improved2", "improved3", "datagroup", "pretrained"]:
         c = R[k]["cascade"]
         rows.append([names[k], "Cascade", pct(c["accuracy"]), f"{c['macro_f1']:.3f}", f"{c['kappa']:.3f}", pct(binary_acc(R[k]))])
         if "flat" in R[k]:
@@ -162,7 +164,10 @@ def build():
         "In thermal images brightness is temperature, so jittering it destroys the signal that separates the classes.",
         f"<b>Larger input and capacity helped next.</b> Upsampling to 80x48 and using two convolutions per block raised accuracy to {pct(imp['accuracy'])}; "
         f"enlarging the Stage 1 and Stage 2 networks raised it to {pct(i3['accuracy'])}, and Stage 1 binary accuracy from {pct(binary_acc(R['improved']))} to {pct(binary_acc(R['improved3']))}.",
-        f"<b>Cascade versus flat CNN.</b> The cascade is ahead on accuracy ({pct(i3['accuracy'])} vs {pct(fl['accuracy'])}) and kappa ({i3['kappa']:.3f} vs {fl['kappa']:.3f}) but slightly behind "
+        f"<b>ImageNet pretraining gave the largest late gain.</b> Fine-tuning a pretrained EfficientNet-B0 at every stage raised the cascade from {pct(dg['accuracy'])} to {pct(pr['accuracy'])} accuracy and macro-F1 from {dg['macro_f1']:.3f} to {pr['macro_f1']:.3f}, and the flat CNN from {pct(fl['accuracy'])} to {pct(prf['accuracy'])}. "
+        f"Training also converged in minutes instead of an hour.",
+        f"<b>Cascade versus flat CNN.</b> From scratch the cascade is ahead on accuracy and kappa but slightly behind on macro-F1. With pretraining the two are essentially tied: cascade {pct(pr['accuracy'])} / {pr['macro_f1']:.3f} / {pr['kappa']:.3f} against flat {pct(prf['accuracy'])} / {prf['macro_f1']:.3f} / {prf['kappa']:.3f} (accuracy, macro-F1, kappa). The pretrained cascade has about 20M parameters (five EfficientNets) against 4M for the flat model, so the cascade did not give a measurable benefit here. "
+        f"Earlier from-scratch comparison: The cascade is ahead on accuracy ({pct(i3['accuracy'])} vs {pct(fl['accuracy'])}) and kappa ({i3['kappa']:.3f} vs {fl['kappa']:.3f}) but slightly behind "
         f"on macro-F1 ({i3['macro_f1']:.3f} vs {fl['macro_f1']:.3f}), so the advantage is modest. {pct(i3['stages']['early_exit_rate'])} of test images leave the cascade at Stage 1 and never reach the larger networks.",
         "<b>Error attribution.</b> With the semantic families, wrong-family decisions at Stage 2 are the largest error source. The data-driven grouping cut Stage 2 errors from "
         f"{i3['stages']['stage2_wrong_family']} to {dg['stages']['stage2_wrong_family']}, but the hard confusions moved into Stage 3 ({i3['stages']['stage3_wrong_subtype']} to {dg['stages']['stage3_wrong_subtype']} errors), "
@@ -196,37 +201,36 @@ def build():
             ["Barraz et al. 2025; Gopalakrishnan et al. 2024, as cited by Corley", "Cascading ensemble with voting CNN; NASNet + LSTM", "Not stated", "88%; 85%", "As cited by Corley"],
             ["Millendorf et al. 2020 (dataset paper)", "-", "-", "No model results reported", "Full paper read"],
             ["Preprints and listings (SSRN Hyperband CNN; diffusion + ViT)", "Hyperband-tuned CNN; transformer", "12 classes, repeated k-fold CV (SSRN)", "98.75%; 92.78%", "<b>Not verified</b> (listings only)"],
-            ["<b>Ours: cascade (data-driven families)</b>", "Five small CNNs, trained from scratch", "12 classes, single stratified 70/15/15 hold-out", f"{pct(dg['accuracy'])} accuracy, macro-F1 {dg['macro_f1']:.3f}", "Our results"],
-            ["Ours: Stage 1 only", "Binary triage CNN", "Healthy vs defect, same hold-out", pct(binary_acc(R['datagroup'])), "Our results"],
-            ["Ours: flat CNN / Random Forest", "Same building blocks / raw pixels", "12 classes, same hold-out", f"{pct(fl['accuracy'])} / {pct(rf['accuracy'])}", "Our results"],
+            ["<b>Ours: pretrained cascade</b>", "ImageNet EfficientNet-B0 fine-tuned at each of 5 stages", "12 classes, single stratified 70/15/15 hold-out", f"{pct(pr['accuracy'])} accuracy, macro-F1 {pr['macro_f1']:.3f}", "Our results"],
+            ["Ours: cascade (data-driven families)", "Five small CNNs, trained from scratch", "12 classes, single stratified 70/15/15 hold-out", f"{pct(dg['accuracy'])} accuracy, macro-F1 {dg['macro_f1']:.3f}", "Our results"],
+            ["Ours: Stage 1 only (pretrained / from scratch)", "Binary triage CNN", "Healthy vs defect, same hold-out", f"{pct(binary_acc(R['pretrained']))} / {pct(binary_acc(R['datagroup']))}", "Our results"],
+            ["Ours: flat CNN (pretrained / scratch) / Random Forest", "EfficientNet-B0 / same blocks / raw pixels", "12 classes, same hold-out", f"{pct(prf['accuracy'])} / {pct(fl['accuracy'])} / {pct(rf['accuracy'])}", "Our results"],
             ["Ours: Duranay-style baseline on our split", "EfficientNet-B0 (ImageNet) 1280-d features + RBF SVM (no NCA, last layer only)", "12 classes, same hold-out",
              f"{pct(ps['accuracy'])} accuracy, macro-F1 {ps['macro_f1']:.3f}; binary {pct(ps['binary_accuracy'])}", "Our results"]]
     s += [table(rows, [3.9, 3.6, 3.5, 3.0, 2.2], bold_rows=(8,)), Spacer(1, 6)]
     s.append(P("How to read this", H2))
     for t in [
-        f"<b>Binary triage.</b> Our Stage 1 reaches {pct(binary_acc(R['datagroup']))}. That is above Alves et al. (92.5%, cross-validated) and below the multi-scale transfer-learning CNN (97.32%). "
-        "It is a competitive result for a small network trained from scratch, but it is a single hold-out run, so we claim parity with the 92.5% to 93% range and not a new best.",
-        f"<b>12 classes.</b> Our {pct(dg['accuracy'])} is <b>below</b> the published 12-class figures (84.0% Random Forest, 85% to 88% for ensembles, 93.93% for EfficientNet features with an SVM). On the published protocols we did not beat them, and we did not reach the 93% ceiling or the 95% target in our proposal. "
+        f"<b>Binary triage.</b> Our pretrained Stage 1 reaches {pct(binary_acc(R['pretrained']))} ({pct(binary_acc(R['datagroup']))} from scratch). That is above Alves et al. (92.5%, cross-validated) and below the multi-scale transfer-learning CNN (97.32%). "
+        "It is a single hold-out run, so we claim to be at or slightly above the 92.5% to 93% range and not a new best.",
+        f"<b>12 classes.</b> Our best, {pct(pr['accuracy'])}, is <b>below</b> the published 12-class figures (84.0% Random Forest, 85% to 88% for ensembles, 93.93% for EfficientNet features with an SVM). On the published protocols we did not beat them, and we did not reach the 93% ceiling or the 95% target in our proposal. "
         f"But a Duranay-style pipeline (pretrained EfficientNet-B0 features and an SVM) run on <b>our</b> split scored only {pct(ps['accuracy'])} (macro-F1 {ps['macro_f1']:.3f}, binary {pct(ps['binary_accuracy'])}), "
-        f"below our cascade ({pct(dg['accuracy'])}, macro-F1 {dg['macro_f1']:.3f}, binary {pct(binary_acc(R['datagroup']))}). This suggests the gap to the published 93.93% is largely due to the evaluation protocol (cross-validation with near-duplicate images), and possibly to details we did not replicate such as selecting 17,000 multi-layer features with NCA, rather than to our model being weaker. It does not prove it.",
+        f"below our pretrained cascade ({pct(pr['accuracy'])}, macro-F1 {pr['macro_f1']:.3f}, binary {pct(binary_acc(R['pretrained']))}) and about level with our from-scratch cascade ({pct(dg['accuracy'])}). This suggests the gap to the published 93.93% is largely due to the evaluation protocol (cross-validation with near-duplicate images), and possibly to details we did not replicate such as selecting 17,000 multi-layer features with NCA, rather than to our model being weaker. It does not prove it.",
         f"<b>Why the numbers are not like-for-like.</b> Duranay uses 10-fold cross-validation and ImageNet-pretrained features; ours is one fixed hold-out split and models trained from scratch. We also measured overlap between our splits: about 7% of test images have a near-identical training image (distance below 0.5; 96% of those share the label) and about 54% have a close one (distance below 1; 78% share the label). "
         "Random fold splits would put such near-duplicates on both sides and raise cross-validated scores. This overlap cannot explain the whole gap, though: on our split a raw-pixel Random Forest scores "
         f"{pct(rf['accuracy'])} and a raw-pixel 1-nearest-neighbour 62.4%, against the 84.0% that Corley et al. report for a Random Forest. How that figure was obtained is not stated, so the cause of that gap is unknown.",
-        f"<b>What we can say.</b> Under our fixed hold-out, the cascade is slightly ahead of a pretrained-feature SVM, and it improves on the flat CNN ({pct(fl['accuracy'])}) by about 3 points and on a raw-pixel Random Forest ({pct(rf['accuracy'])}) by about 18 points. This is a Duranay-style baseline, not an exact replication (they select 17,000 features with NCA from several layers). Our contribution is the cascade design and the ablation and error analysis (which stage causes which errors), not a new accuracy record.",
-        "<b>To make the comparison fully fair</b>, the next step is to run our cascade and flat CNN under the same 10-fold cross-validation, and to replicate the full NCA feature-selection pipeline.",
+        f"<b>What we can say.</b> Under our fixed hold-out, the pretrained cascade is about {(pr['accuracy'] - ps['accuracy']) * 100:.0f} points ahead of a pretrained-feature SVM and about {(pr['accuracy'] - rf['accuracy']) * 100:.0f} points ahead of a raw-pixel Random Forest; it is level with a pretrained flat CNN. This is a Duranay-style baseline, not an exact replication (they select 17,000 features with NCA from several layers). Our contribution is the cascade design and the ablation and error analysis (which stage causes which errors), not a new accuracy record.",
+        "<b>To make the comparison fully fair</b>, a leak-free 10-fold cross-validation of the pretrained cascade is running (progress in results/LIVE_STATUS.md on GitHub); its numbers are not part of this document yet.",
     ]:
         s.append(P("- " + t))
     s.append(P("Sources: Duranay, Electronics 12(21):4397 (mdpi.com/2079-9292/12/21/4397); Corley et al., arXiv:2503.02128; Alves et al., Renewable Energy 179:502-516 (abstract via library record); "
                "Millendorf et al., ICLR 2020 AI for Earth Sciences workshop. Rows marked 'as cited' were read in the citing paper, not in the original. Rows marked 'Not verified' appeared only in search listings.", SM))
-    s.append(PageBreak())
-
     s.append(P("3. Conclusion", H2))
     for t in [
         f"We implemented Cascaded-SolarNet, a three-stage cascade of five small CNNs for 12-class infrared solar module defect classification, in PyTorch, with a reproducible split, tests, diagrams and live demos.",
-        f"<b>The cascade works.</b> After diagnosing and removing harmful photometric augmentation, enlarging the input and strengthening the front stages, accuracy rose from 61.7% to {pct(dg['accuracy'])} "
-        f"(macro-F1 0.37 to {dg['macro_f1']:.2f}). Healthy-versus-defect triage reaches about {pct(binary_acc(R['datagroup']))}, comparable to the 92.5% binary figure published for this dataset.",
-        f"<b>The claim that a cascade clearly beats a flat classifier was only partly supported.</b> It is ahead on accuracy and kappa and processes about half of all images with only the small Stage 1 network, "
-        f"but a flat CNN with the same building blocks is within about 3 accuracy points and slightly better on macro-F1. Published 12-class results (84% to 93.93%) are higher than ours, although they use cross-validation and pretrained features; the target of exceeding 93% on all 12 classes was not met.",
+        f"<b>The cascade works.</b> After diagnosing and removing harmful photometric augmentation, enlarging the input and strengthening the front stages, accuracy rose from 61.7% to {pct(dg['accuracy'])} from scratch and to {pct(pr['accuracy'])} with ImageNet pretraining "
+        f"(macro-F1 0.37 to {pr['macro_f1']:.2f}). Healthy-versus-defect triage reaches about {pct(binary_acc(R['pretrained']))}, comparable to the 92.5% binary figure published for this dataset.",
+        f"<b>The claim that a cascade clearly beats a flat classifier was only partly supported.</b> From scratch it is ahead on accuracy and kappa, and with pretraining it ties a flat CNN (accuracy {pct(pr['accuracy'])} vs {pct(prf['accuracy'])}, macro-F1 {pr['macro_f1']:.3f} vs {prf['macro_f1']:.3f}) while using five times the parameters. "
+        f" Published 12-class results (84% to 93.93%) are higher than ours, although they use cross-validation and pretrained features; the target of exceeding 93% on all 12 classes was not met.",
         "<b>Error propagation is the central trade-off.</b> A wrong decision at Stage 1 or Stage 2 cannot be undone. Re-grouping the classes by their actual confusions moved errors between stages "
         "rather than removing them, and soft routing did not recover them.",
         "<b>Thermal images need thermal-aware augmentation.</b> Geometric flips help; brightness, contrast and noise jitter hurt, because brightness encodes temperature.",

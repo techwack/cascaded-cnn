@@ -124,6 +124,8 @@ the input shape. Flipping both ways already gives the 180° rotation.
 | `improved2.yaml` (improved + sqrt-balanced sampler + label smoothing) | Cascade | 0.755 | 0.576 | 0.648 | 0.891 |
 | **`improved3.yaml`** (improved + larger Stage 1/2 CNNs) | **Cascade** | **0.796** | **0.639** | **0.714** | **0.938** |
 | `datagroup.yaml` (improved3 sizes + data-driven families, `taxonomy_data.yaml`) | Cascade | 0.798 | 0.646 | 0.717 | 0.941 |
+| **`pretrained.yaml`** (ImageNet EfficientNet-B0 fine-tuned at every stage, mixed precision) | **Cascade** | **0.832** | **0.700** | **0.764** | **0.958** |
+| | Flat CNN (same pretrained backbone) | 0.826 | 0.708 | 0.761 | n/a |
 | Duranay-style baseline (ImageNet EfficientNet-B0 features + RBF SVM, `scripts/pretrained_baseline.py`) | SVM | 0.787 | 0.640 | 0.689 | 0.904 |
 | Raw-pixel Random Forest (Colab, first run) | RF | 0.616 | 0.337 | 0.324 | n/a |
 
@@ -139,7 +141,7 @@ Raw metrics are in [`results/`](results/). Notes:
 
 *Updated while work is in progress; the Results table above is the source of truth for finished runs.*
 
-**Best finished so far:** from-scratch cascade, test accuracy 0.798, macro-F1 0.646, Stage-1 binary accuracy 0.941 (`datagroup.yaml`). A Duranay-style baseline (ImageNet EfficientNet-B0 features + SVM) on the same split gets 0.787.
+**Best finished so far:** the pretrained cascade (`pretrained.yaml`): test accuracy 0.832, macro-F1 0.700, kappa 0.764, Stage-1 binary accuracy 0.958. A pretrained flat CNN is essentially tied (0.826 / 0.708 / 0.761), so the cascade is not clearly better than a flat model with the same backbone, and it has about 5x the parameters (20M vs 4M). Best from-scratch cascade: 0.798 accuracy (`datagroup.yaml`). A Duranay-style baseline (ImageNet EfficientNet-B0 features + SVM) on the same split gets 0.787.
 
 **Why our number is below the 93.93% in Duranay 2023:** that result uses 10-fold cross-validation, a network trained end-to-end on the dataset and a supervised NCA feature selection before the cross-validation, so test images appear to influence training. Our numbers use a fixed split whose test images are never used for training, early stopping or selection. See `docs/Results_Comparison_Conclusion.pdf`.
 
@@ -147,7 +149,7 @@ Raw metrics are in [`results/`](results/). Notes:
 
 | Job | What | Status |
 |---|---|---|
-| Pretrained cascade (`configs/pretrained.yaml`, `scripts/run_pretrained.sh`) | ImageNet EfficientNet-B0 under each of the 5 stages, mixed precision | Per-stage validation macro-F1 so far (from scratch in brackets): triage 0.947 (0.931), electrical 0.826 (0.786), environmental 0.839 (0.822), structural 0.977 (0.955), family 0.796 (0.72). Flat baseline and test evaluation still running. |
+| Pretrained cascade (`configs/pretrained.yaml`, `scripts/run_pretrained.sh`) | ImageNet EfficientNet-B0 under each of the 5 stages, mixed precision | **Done**, see Results. Stage-2 (wrong family) is still the largest error source (272 of 505 errors). |
 | 10-fold cross-validation (`scripts/cv_cascade.py`, `scripts/run_cv.sh`) | Same protocol family as Duranay, leak-free: each fold trains only on the other folds | Queued, starts after the pretrained run. |
 
 **Purvee:** ResNet-based experiments (please push your code and results on a branch / PR, and say which split and config you used so numbers are comparable: `data/splits.json`, seed 42, flips-only augmentation).
