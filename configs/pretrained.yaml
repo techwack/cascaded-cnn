@@ -1,0 +1,32 @@
+# Pretrained cascade: an ImageNet-pretrained EfficientNet-B0 under every stage, fine-tuned.
+# Inputs are resized inside the model (to `size`), so data.upsample stays 1.
+data:
+  root: data/InfraredSolarModules     # folder containing module_metadata.json
+  splits_file: data/splits.json       # written by scripts/make_splits.py
+  seed: 42
+  val_frac: 0.15
+  test_frac: 0.15
+  upsample: 1
+
+augment:
+  hflip: 0.5
+  vflip: 0.5
+  brightness: 0.0
+  contrast: 0.0
+  noise_std: 0.0
+
+train:
+  batch_size: 64
+  epochs: 40
+  lr: 3.0e-4
+  weight_decay: 1.0e-4
+  patience: 10                        # early stopping on val macro-F1
+  weighted_loss: true                 # w_r = N / (K * n_r)
+  num_workers: 2
+  out_dir: runs_pretrained
+
+models:
+  triage:     {pretrained: true, size: [160, 96], dropout: 0.2}
+  family:     {pretrained: true, size: [160, 96], dropout: 0.3}
+  fine:       {pretrained: true, size: [160, 96], dropout: 0.3}
+  flat:       {pretrained: true, size: [160, 96], dropout: 0.3}

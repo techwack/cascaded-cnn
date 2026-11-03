@@ -57,3 +57,11 @@ def test_cascade_routing_and_early_exit():
     assert out["pred"].tolist() == [0, TAX.index(TAX.families[fams[0]][2]), TAX.index(TAX.families[fams[2]][1])]
     assert out["is_defect"].tolist() == [False, True, True]
     assert out["family"].tolist() == [-1, 0, 2]
+
+
+def test_pretrained_stage_output_shape():
+    pytest.importorskip("torchvision")
+    from solarnet.models import PretrainedStage
+
+    m = PretrainedStage(3, size=(64, 48), weights=False).eval()
+    assert m(torch.zeros(2, 1, 40, 24)).shape == (2, 3)

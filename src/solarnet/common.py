@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 import yaml
 
-from .models import CascadedSolarNet, StageCNN
+from .models import CascadedSolarNet, PretrainedStage, StageCNN
 from .taxonomy import Taxonomy, node_name
 
 
@@ -39,6 +39,8 @@ def model_kind(node: str) -> str:
 
 def build_model(cfg: dict, tax: Taxonomy, node: str) -> StageCNN:
     spec = cfg["models"][model_kind(node)]
+    if spec.get("pretrained"):
+        return PretrainedStage(len(tax.node_classes(node)), spec["dropout"], tuple(spec.get("size", (160, 96))))
     return StageCNN(spec["channels"], len(tax.node_classes(node)), spec["dropout"],
                     convs_per_block=spec.get("convs_per_block", 1))
 

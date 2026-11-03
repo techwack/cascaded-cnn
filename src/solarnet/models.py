@@ -36,6 +36,28 @@ class StageCNN(nn.Module):
         return self.head(F.adaptive_avg_pool2d(x, 1))
 
 
+class PretrainedStage(nn.Module):
+    """ImageNet-pretrained EfficientNet-B0 fine-tuned for one stage.
+
+    Input is the 1-channel normalised IR image; it is resized to `size` and repeated to 3 channels
+    inside the model, so the rest of the pipeline is unchanged.
+    """
+
+    def __init__(self, num_classes: int, dropout: float = 0.2, size=(160, 96), weights: bool = True):
+        super().__init__()
+        import torchvision
+
+        w = torchvision.models.EfficientNet_B0_Weights.IMAGENET1K_V1 if weights else None
+        net = torchvision.models.efficientnet_b0(weights=w)
+        self.features, self.pool = net.features, net.avgpool
+        self.head = nn.Sequential(nn.Dropout(dropout), nn.Linear(1280, num_classes))
+        self.size = tuple(size)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = F.interpolate(x, size=self.size, mode="bilinear", align_corners=False).repeat(1, 3, 1, 1)
+        return self.head(torch.flatten(self.pool(self.features(x)), 1))
+
+
 class CascadedSolarNet(nn.Module):
     """CNN-1 (triage) -> CNN-2 (family) -> CNN-3x (fine-grained, one per family).
 
