@@ -21,3 +21,4 @@ pretrained_stream*.log
 runs_cv/
 cv_stream*.log
 cv_run.*
+autopush.*
