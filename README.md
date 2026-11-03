@@ -137,42 +137,29 @@ Raw metrics are in [`results/`](results/). Notes:
 
 ## Status and who is doing what
 
-**Best so far:** `improved3.yaml`, cascade test accuracy 0.796, macro-F1 0.639, kappa 0.714, Stage-1 binary accuracy 0.938 (see Results). The published 12-class figure of 93.93% (Duranay 2023, EfficientNet-B0 features + SVM, 10-fold cross-validation) is higher than our 12-class result; it uses a different protocol (cross-validation, pretrained features). Our Stage-1 binary accuracy (94.1%) is comparable to the 92.5% binary figure of Alves et al. 2021. See `docs/Results_Comparison_Conclusion.pdf`.
+*Updated while work is in progress; the Results table above is the source of truth for finished runs.*
 
-**Where the errors are** (`improved3`, 613 errors on 3,000 test images): Stage 2 wrong family 300, Stage 3 wrong subtype 126, Stage 1 missed defects 108, Stage 1 false alarms 79. Stage 2 is the bottleneck.
+**Best finished so far:** from-scratch cascade, test accuracy 0.798, macro-F1 0.646, Stage-1 binary accuracy 0.941 (`datagroup.yaml`). A Duranay-style baseline (ImageNet EfficientNet-B0 features + SVM) on the same split gets 0.787.
+
+**Why our number is below the 93.93% in Duranay 2023:** that result uses 10-fold cross-validation, a network trained end-to-end on the dataset and a supervised NCA feature selection before the cross-validation, so test images appear to influence training. Our numbers use a fixed split whose test images are never used for training, early stopping or selection. See `docs/Results_Comparison_Conclusion.pdf`.
+
+**Running now (Divyanshi's laptop):**
+
+| Job | What | Status |
+|---|---|---|
+| Pretrained cascade (`configs/pretrained.yaml`, `scripts/run_pretrained.sh`) | ImageNet EfficientNet-B0 under each of the 5 stages, mixed precision | Per-stage validation macro-F1 so far (from scratch in brackets): triage 0.947 (0.931), electrical 0.826 (0.786), environmental 0.839 (0.822), structural 0.977 (0.955), family 0.796 (0.72). Flat baseline and test evaluation still running. |
+| 10-fold cross-validation (`scripts/cv_cascade.py`, `scripts/run_cv.sh`) | Same protocol family as Duranay, leak-free: each fold trains only on the other folds | Queued, starts after the pretrained run. |
+
+**Purvee:** ResNet-based experiments (please push your code and results on a branch / PR, and say which split and config you used so numbers are comparable: `data/splits.json`, seed 42, flips-only augmentation).
 
 | Area | Status |
 |---|---|
-| Stage 3 (electrical, environmental, structural) | Trained with `improved.yaml`; reused unchanged by `improved3.yaml`. Val macro-F1: 0.786 / 0.822 / 0.955. No need to retrain unless trying to improve Electrical. |
-| Stage 1 and 2 (triage, family) | Purvee: experiments on larger/longer Stage 1 and 2 networks. |
-| Data-driven family grouping | Done (`scripts/run_datagroup.sh`). Stage-2 errors fell 300 -> 116 but Stage-3 errors rose 126 -> 313 (the hard confusions moved into the 5-class family), so net accuracy is only 0.798 vs 0.796 (single seed, within noise). |
-| Random forest baseline | Not run locally (blocked DLL on one machine); run it on Colab. |
+| Stage 3 checkpoints (from-scratch) | In `checkpoints/stage3_improved/`. |
+| Data-driven family grouping | Done: Stage-2 errors 300 -> 116, Stage-3 errors 126 -> 313, net accuracy 0.798 vs 0.796. |
+| Random forest baseline | 0.616 accuracy on our split (Colab, first run); sklearn is blocked by Windows app control on one laptop. |
+| Report | `docs/Results_Comparison_Conclusion.pdf` (results, verified comparison with published work, conclusion). |
 
-Trained checkpoints (`*.pt`) and `runs*/` are git-ignored, so they are not in the repo. Ask for them if you need to evaluate the full cascade without retraining.
-
-To evaluate the full cascade after training: `python -m solarnet.evaluate --config configs/improved3.yaml`
-
-## Live demo
-
-Watch an image go through the cascade, with each stage's confidence bars (needs trained checkpoints, see `checkpoints/`):
-
-```bash
-python scripts/predict.py --sample 5                    # random test images
-python scripts/predict.py --class Hot-Spot --sample 3   # a specific class
-python scripts/predict.py --image my_module.jpg         # any image
-```
-
-The figure is saved to `demo_out/`.
-
-Browser version (animated, pick a class and press Run): `python scripts/make_demo_html.py`, then open `demo_out/demo.html`.
-
-Live server version, which also lets you upload your own image or jump to a misclassified one:
-
-```bash
-python demo/app.py        # then open http://127.0.0.1:8000
-```
-
-Each stage's probabilities are shown, and stages skipped by the early exit are marked. Runs locally on CPU.
+Trained checkpoints (`*.pt`) and `runs*/` are git-ignored except `checkpoints/`. To evaluate a from-scratch cascade: `python -m solarnet.evaluate --config configs/improved3.yaml`.
 
 ## Experiment plan
 
