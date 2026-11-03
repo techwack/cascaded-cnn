@@ -17,12 +17,13 @@ augment:
 
 train:
   batch_size: 64
-  epochs: 40
+  epochs: 25
   lr: 3.0e-4
   weight_decay: 1.0e-4
-  patience: 10                        # early stopping on val macro-F1
+  patience: 6                         # early stopping on val macro-F1
   weighted_loss: true                 # w_r = N / (K * n_r)
   num_workers: 2
+  amp: true                           # mixed precision, ~2x faster on GPU
   out_dir: runs_pretrained
 
 models:

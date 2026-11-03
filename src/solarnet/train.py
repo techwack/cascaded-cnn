@@ -61,6 +61,8 @@ def train_node(cfg: dict, tax: Taxonomy, node: str, splits: dict, stats: dict) -
     opt = torch.optim.Adam(model.parameters(), lr=tc["lr"], weight_decay=tc["weight_decay"])
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode="max", factor=0.5, patience=tc["patience"] // 3)
 
+    use_amp = bool(tc.get("amp", False)) and dev.type == "cuda"  # mixed precision (config: train.amp)
+    scaler = torch.amp.GradScaler(enabled=use_amp)
     out_path = Path(tc["out_dir"]) / node / "best.pt"
     best, best_epoch, history = -1.0, 0, []
     for epoch in range(1, tc["epochs"] + 1):
@@ -69,10 +71,12 @@ def train_node(cfg: dict, tax: Taxonomy, node: str, splits: dict, stats: dict) -
         for xb, yb in loader:
             xb, yb = xb.to(dev), yb.to(dev)
             xb = preprocess(augment(xb, cfg["augment"]), stats, up)
-            loss = loss_fn(model(xb), yb)
+            with torch.autocast(device_type=dev.type, dtype=torch.float16, enabled=use_amp):
+                loss = loss_fn(model(xb).float(), yb)
             opt.zero_grad()
-            loss.backward()
-            opt.step()
+            scaler.scale(loss).backward()
+            scaler.step(opt)
+            scaler.update()
             total += loss.item() * len(yb)
             n += len(yb)
 

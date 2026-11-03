@@ -17,3 +17,4 @@ datagroup_run.*
 demo_out/
 runs_pretrained/
 pretrained_run.*
+pretrained_stream*.log
