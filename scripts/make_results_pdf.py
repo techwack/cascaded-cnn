@@ -181,40 +181,47 @@ def build():
                      f"{R['datagroup']['cascade']['per_class'][c]['f1-score']:.2f}", f"{R['improved']['flat']['per_class'][c]['f1-score']:.2f}"])
     s += [table(rows, [3.6, 2.4, 3.8, 3.8, 2.6]), Spacer(1, 6), Image(str(ch["perclass"]), 15.5 * cm, 6.9 * cm)]
 
+    rf = json.load(open(RES / "random_forest.json"))
     s.append(P("2. Comparison with the Base Papers", H2))
-    s.append(P("The base work in our literature survey falls into two groups: results on the same InfraredSolarModules benchmark, and results on other data, "
-               "modalities or tasks. Only the first group is a fair comparison, and even there the task (binary or 12-class) is not stated in the survey. "
-               "We therefore compare our Stage 1 binary accuracy and our 12-class accuracy separately."))
-    rows = [["Source (as cited in our survey)", "Data / task", "Reported", "Our result", "Comparable?"],
-            ["Millendorf et al. 2020 (dataset): Random Forest", "InfraredSolarModules, task not stated", "84%", f"Binary {pct(binary_acc(R['datagroup']))}; 12-class {pct(dg['accuracy'])}", "Same data. Task unclear."],
-            ["Millendorf et al. 2020: custom CNN", "InfraredSolarModules, task not stated", "92.5%", f"Binary {pct(binary_acc(R['datagroup']))}; 12-class {pct(dg['accuracy'])}", "Same data. Task unclear."],
-            ["Millendorf et al. 2020: EfficientNet + SVM", "InfraredSolarModules, task not stated", "93%", f"Binary {pct(binary_acc(R['datagroup']))}; 12-class {pct(dg['accuracy'])}", "Same data. Task unclear."],
-            ["PV-faultNet (arXiv:2411.02997)", "Lightweight CNN, dataset not specified in survey", "93% at 8 ms/image", "Not measured on same hardware", "No (different setup)"],
-            ["Tella et al. 2025 (8 CNNs/ViTs)", "ELPV benchmark (different dataset)", "about 68% multi-class, 73% binary", f"12-class {pct(dg['accuracy'])}", "Directional only"],
-            ["B-CNN (Pathak and Patil 2025)", "Thermal + visual fusion (two sensors)", "98.5% accuracy", "Single IR sensor", "No (more information)"],
-            ["Field-adapted ResNet-50", "Field data, transfer learning", "98.59%", "-", "No (different data)"],
-            ["CNN + BFO (VGG-16)", "Pretrained CNNs on other data", "98.75%", "-", "No (different data)"]]
-    s += [table(rows, [4.4, 3.7, 2.6, 3.4, 2.7]), Spacer(1, 6)]
-    s.append(P("<b>How to read this.</b>"))
-    for t in [f"<b>Binary (healthy vs defect):</b> our Stage 1 reaches {pct(binary_acc(R['datagroup']))}, which is at or above the 92.5% to 93% figures if those refer to the binary task, as their magnitude suggests. "
-              "The margin is 1 to 2 points on a single run and a different protocol, so we claim parity rather than a clear win.",
-              f"<b>12-class:</b> our {pct(dg['accuracy'])} is not comparable to 93%. If the 92.5% to 93% figures were 12-class results, our model would be about 13 points below them. "
-              "It is, however, above the roughly 68% multi-class level that Tella et al. report across eight architectures, although on a different dataset.",
-              "<b>Models above 98%</b> use two sensors, pretrained backbones on other data or field-specific data. They show what additional information can buy, not a like-for-like baseline for a single-camera, 24x40 pixel IR model.",
-              "<b>Our own baselines:</b> the flat CNN with identical building blocks reaches " + f"{pct(fl['accuracy'])} accuracy and {fl['macro_f1']:.3f} macro-F1. A random forest baseline was planned but not run on our final split."]:
+    s.append(P("We re-checked the literature at the primary sources. Two points matter for any comparison. First, the dataset paper itself "
+               "(Millendorf et al., ICLR 2020 workshop) reports <b>no model accuracies</b>; the numbers our earlier survey attributed to it "
+               "(Random Forest 84%, CNN 92.5%, EfficientNet+SVM 93%) come from later papers. Second, those papers differ from our setup in task, "
+               "split and features, so the numbers can be placed side by side but not ranked."))
+    rows = [["Paper", "Method", "Task and protocol", "Reported", "Checked"],
+            ["Duranay 2023, Electronics 12(21):4397", "EfficientNet-B0 features (ImageNet-pretrained), NCA selection, SVM", "12 classes, 10-fold cross-validation", "93.93% accuracy, 89.82% F1", "Full paper read"],
+            ["Alves et al. 2021, Renewable Energy 179:502", "Custom CNN with data augmentation", "Anomaly detection (binary); 8 selected classes; cross-validation", "92.5% binary; 78.85% for 8 classes", "Abstract (library record)"],
+            ["Multi-scale CNN, transfer learning (Eng. Appl. Artif. Intell. 113, 2022), as cited by Duranay", "Three-branch CNN, transfer learning", "Fault detection; 11 anomaly types", "97.32% detection; 93.51% for 11 types", "As cited by Duranay"],
+            ["Corley et al. 2025 (CVPRW), their Random Forest", "Random Forest", "'Anomaly classification', split not stated", "84.0%", "arXiv text read"],
+            ["Barraz et al. 2025; Gopalakrishnan et al. 2024, as cited by Corley", "Cascading ensemble with voting CNN; NASNet + LSTM", "Not stated", "88%; 85%", "As cited by Corley"],
+            ["Millendorf et al. 2020 (dataset paper)", "-", "-", "No model results reported", "Full paper read"],
+            ["Preprints and listings (SSRN Hyperband CNN; diffusion + ViT)", "Hyperband-tuned CNN; transformer", "12 classes, repeated k-fold CV (SSRN)", "98.75%; 92.78%", "<b>Not verified</b> (listings only)"],
+            ["<b>Ours: cascade (data-driven families)</b>", "Five small CNNs, trained from scratch", "12 classes, single stratified 70/15/15 hold-out", f"{pct(dg['accuracy'])} accuracy, macro-F1 {dg['macro_f1']:.3f}", "Our results"],
+            ["Ours: Stage 1 only", "Binary triage CNN", "Healthy vs defect, same hold-out", pct(binary_acc(R['datagroup'])), "Our results"],
+            ["Ours: flat CNN / Random Forest", "Same building blocks / raw pixels", "12 classes, same hold-out", f"{pct(fl['accuracy'])} / {pct(rf['accuracy'])}", "Our results"]]
+    s += [table(rows, [3.9, 3.6, 3.5, 3.0, 2.2], bold_rows=(8,)), Spacer(1, 6)]
+    s.append(P("How to read this", H2))
+    for t in [
+        f"<b>Binary triage.</b> Our Stage 1 reaches {pct(binary_acc(R['datagroup']))}. That is above Alves et al. (92.5%, cross-validated) and below the multi-scale transfer-learning CNN (97.32%). "
+        "It is a competitive result for a small network trained from scratch, but it is a single hold-out run, so we claim parity with the 92.5% to 93% range and not a new best.",
+        f"<b>12 classes.</b> Our {pct(dg['accuracy'])} is <b>below</b> the published 12-class figures (84.0% Random Forest, 85% to 88% for ensembles, 93.93% for EfficientNet features with an SVM). We did not beat them, and we did not reach the 93% ceiling or the 95% target in our proposal.",
+        f"<b>Why the numbers are not like-for-like.</b> Duranay uses 10-fold cross-validation and ImageNet-pretrained features; ours is one fixed hold-out split and models trained from scratch. We also measured overlap between our splits: about 7% of test images have a near-identical training image (distance below 0.5; 96% of those share the label) and about 54% have a close one (distance below 1; 78% share the label). "
+        "Random fold splits would put such near-duplicates on both sides and raise cross-validated scores. This overlap cannot explain the whole gap, though: on our split a raw-pixel Random Forest scores "
+        f"{pct(rf['accuracy'])} and a raw-pixel 1-nearest-neighbour 62.4%, against the 84.0% that Corley et al. report for a Random Forest. How that figure was obtained is not stated, so the cause of that gap is unknown.",
+        f"<b>What we can say.</b> Under our stricter fixed hold-out, the cascade improves on the flat CNN ({pct(fl['accuracy'])}) by about 3 points and on a raw-pixel Random Forest ({pct(rf['accuracy'])}) by about 18 points. Our contribution is the cascade design and the ablation and error analysis (which stage causes which errors), not a new accuracy record.",
+        "<b>To make the comparison fair</b>, the next step is to run our cascade and flat CNN under the same 10-fold cross-validation, and to run the EfficientNet-B0 + NCA + SVM pipeline on our split.",
+    ]:
         s.append(P("- " + t))
-    s.append(P("<b>Note on sources.</b> The original dataset paper (Millendorf et al., ICLR 2020 workshop, 5 pages) describes the data and lists benchmark classification "
-               "results as a goal, but it reports no model accuracies. The 84%, 92.5% and 93% figures in our survey are quoted from elsewhere and could not be traced to that paper. "
-               "They should be verified against their original source before being presented as published baselines. The report's stated target of above 95% accuracy was not reached.", SM))
+    s.append(P("Sources: Duranay, Electronics 12(21):4397 (mdpi.com/2079-9292/12/21/4397); Corley et al., arXiv:2503.02128; Alves et al., Renewable Energy 179:502-516 (abstract via library record); "
+               "Millendorf et al., ICLR 2020 AI for Earth Sciences workshop. Rows marked 'as cited' were read in the citing paper, not in the original. Rows marked 'Not verified' appeared only in search listings.", SM))
     s.append(PageBreak())
 
     s.append(P("3. Conclusion", H2))
     for t in [
         f"We implemented Cascaded-SolarNet, a three-stage cascade of five small CNNs for 12-class infrared solar module defect classification, in PyTorch, with a reproducible split, tests, diagrams and live demos.",
         f"<b>The cascade works.</b> After diagnosing and removing harmful photometric augmentation, enlarging the input and strengthening the front stages, accuracy rose from 61.7% to {pct(dg['accuracy'])} "
-        f"(macro-F1 0.37 to {dg['macro_f1']:.2f}). Healthy-versus-defect triage reaches about {pct(binary_acc(R['datagroup']))}, in line with published binary results on this dataset.",
+        f"(macro-F1 0.37 to {dg['macro_f1']:.2f}). Healthy-versus-defect triage reaches about {pct(binary_acc(R['datagroup']))}, comparable to the 92.5% binary figure published for this dataset.",
         f"<b>The claim that a cascade clearly beats a flat classifier was only partly supported.</b> It is ahead on accuracy and kappa and processes about half of all images with only the small Stage 1 network, "
-        f"but a flat CNN with the same building blocks is within about 3 accuracy points and slightly better on macro-F1. The target of exceeding 93% on all 12 classes was not met.",
+        f"but a flat CNN with the same building blocks is within about 3 accuracy points and slightly better on macro-F1. Published 12-class results (84% to 93.93%) are higher than ours, although they use cross-validation and pretrained features; the target of exceeding 93% on all 12 classes was not met.",
         "<b>Error propagation is the central trade-off.</b> A wrong decision at Stage 1 or Stage 2 cannot be undone. Re-grouping the classes by their actual confusions moved errors between stages "
         "rather than removing them, and soft routing did not recover them.",
         "<b>Thermal images need thermal-aware augmentation.</b> Geometric flips help; brightness, contrast and noise jitter hurt, because brightness encodes temperature.",
@@ -222,13 +229,13 @@ def build():
         s.append(P("- " + t))
     s.append(P("Limitations", H2))
     for t in ["Single run per configuration (seed 42); differences below about 0.5 points are within noise and no confidence intervals were computed.",
-              "The benchmark has no module or site identifiers, so near-duplicate crops can appear in both training and test data, which may inflate all reported numbers, ours and published ones.",
+              "The benchmark has no module or site identifiers, we measured that about 7% of our test images have a near-identical training image, and cross-validated results in the literature are likely to be more affected by this than our fixed hold-out.",
               "Rare classes (Soiling, Hot-Spot, Diode-Multi) remain weak, which keeps macro-F1 well below accuracy.",
               "Latency on edge hardware was not measured reliably; the early-exit rate (about half of the images) is the supporting evidence for efficiency.",
-              "The comparison with published results is limited by missing information about which task the quoted baselines address."]:
+              "Published numbers use different protocols (cross-validation, pretrained features), and some sources could only be checked through abstracts or citing papers."]:
         s.append(P("- " + t))
     s.append(P("Future work", H2))
-    for t in ["Run several seeds and report mean and standard deviation; run the random forest and an EfficientNet baseline on the same split.",
+    for t in ["Run several seeds and report mean and standard deviation; evaluate under 10-fold cross-validation for a like-for-like comparison with published results, and run the EfficientNet-B0 + SVM pipeline on our split.",
               "Improve Stage 2, for example by training the family classifier jointly with the specialists or on the cascade's own routing errors, or with class-specific augmentation for rare faults.",
               "Add the planned ablations (no early exit, unweighted loss, upsampling factor in isolation) and deduplicate near-identical crops before splitting.",
               "Measure real latency and memory on a drone-class edge device, and test additional modalities such as RGB."]:

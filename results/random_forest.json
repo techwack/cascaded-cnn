@@ -1,0 +1,6 @@
+{
+ "accuracy": 0.6156666666666667,
+ "macro_f1": 0.33705220978886813,
+ "kappa": 0.3238991958915588,
+ "note": "Random Forest (300 trees, raw pixels, balanced class weights) on the same 70/15/15 split (seed 42); run on Colab in the first training run."
+}
