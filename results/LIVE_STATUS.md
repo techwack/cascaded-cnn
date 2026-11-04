@@ -1,6 +1,6 @@
 # Live status
 
-Last updated 2026-11-03 09:39 (written automatically by scripts/live_status.py).
+Last updated 2026-11-04 18:28 (written automatically by scripts/live_status.py).
 
 ## Pretrained cascade (EfficientNet-B0 under every stage)
 
@@ -10,5 +10,5 @@ Last updated 2026-11-03 09:39 (written automatically by scripts/live_status.py).
 
 ## 10-fold cross-validation of the pretrained cascade
 
-- cv_streamA.log: `[triage] ep   8 loss 0.1199 val_acc 0.9410 val_f1 0.9410 (24.6s)`
-- cv_streamB.log: `[triage] ep   8 loss 0.1083 val_acc 0.9390 val_f1 0.9390 (24.6s)`
+- cv_streamA.log: `[triage] ep   3 loss 0.2067 val_acc 0.9195 val_f1 0.9194 (25.3s)`
+- cv_streamB.log: `[triage] ep   3 loss 0.2059 val_acc 0.9150 val_f1 0.9150 (25.2s)`

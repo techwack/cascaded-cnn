@@ -1,0 +1,12 @@
+{
+ "n_folds": 0,
+ "folds": [],
+ "accuracy_mean": NaN,
+ "accuracy_std": NaN,
+ "macro_f1_mean": NaN,
+ "macro_f1_std": NaN,
+ "kappa_mean": NaN,
+ "kappa_std": NaN,
+ "binary_accuracy_mean": NaN,
+ "binary_accuracy_std": NaN
+}
