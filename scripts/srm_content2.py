@@ -410,7 +410,11 @@ def appendix_blocks(demo_mix_png):
 
 
 def build_all(charts, perclass_png, demo_png, demo_mix_png):
+    import srm_content3 as sc3
     old = sc.build_blocks(charts, perclass_png, demo_png)
+    i2 = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 2)
+    i3_ = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 3)
     i5 = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 5)
     i7 = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 7)
-    return old[:i5] + chapters_5_6(charts, perclass_png, demo_png) + old[i7:], appendix_blocks(demo_mix_png)
+    blocks = old[:i2] + sc3.chapter_2() + old[i3_:i5] + chapters_5_6(charts, perclass_png, demo_png) + old[i7:]
+    return blocks, appendix_blocks(demo_mix_png)

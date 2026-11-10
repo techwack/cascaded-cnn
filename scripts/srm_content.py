@@ -432,4 +432,6 @@ REFERENCES = [
     "[12] K. He, X. Zhang, S. Ren, and J. Sun, \"Deep Residual Learning for Image Recognition,\" in Proc. CVPR, 2016, pp. 770-778.",
     "[13] A. Paszke et al., \"PyTorch: An Imperative Style, High-Performance Deep Learning Library,\" in Advances in Neural Information Processing Systems 32, 2019.",
     "[14] J. Deng et al., \"ImageNet: A Large-Scale Hierarchical Image Database,\" in Proc. CVPR, 2009.",
+    "[15] Z. Barraz, I. Sebari, N. Lamrini, K. Ait El Kadi, and I. Ait Abdelmoula, \"A cascading decision system for enhanced anomaly classification of large-scale photovoltaic systems using drone's thermal data with class-imbalance problem,\" Results in Engineering, vol. 25, p. 103876, 2025.",
+    "[16] S. Gopalakrishnan, N. I. Abdul Wahab, V. Veerasamy, H. Hizam, and R. A. Farade, \"NASNet-LSTM based deep learning classifier for anomaly detection in solar photovoltaic modules,\" Journal of Physics: Conference Series, p. 012006, IOP Publishing, 2024.",
 ]
