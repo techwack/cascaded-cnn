@@ -99,7 +99,7 @@ def tc_fill(tc, text, parent, bold=None):
 
 
 # ------------------------------------------------------------------ main build
-def build(base: Path, out: Path, pages: dict | None):
+def build(base: Path, out: Path, pages: dict | None, nndl: bool = False):
     doc = Document(str(base))
     P = list(doc.paragraphs)
     parent = P[132]._parent
@@ -109,7 +109,9 @@ def build(base: Path, out: Path, pages: dict | None):
     protos = {k: copy.deepcopy(P[i]._p) for k, i in dict(chnum=130, chtitle=131, sec=135, sub=170, body=132, cap=195, img=351, figcap=352, refh=712, ref=713).items()}
 
     # ---------------- front matter ----------------
-    fill(P[1], "21CSC402P-PROJECT")
+    COURSE = "21CSC406J - NEURAL NETWORKS AND DEEP LEARNING" if nndl else "21CSC402P-PROJECT"
+    COURSE_CERT = "21CSC406J - Neural Networks and Deep Learning course" if nndl else "21CSC402P - Project"
+    fill(P[1], COURSE)
     for i, (n, r) in zip((5, 6, 7), NAMES):
         fill(P[i], f"{n} [{r}]")
     fill(P[11], GUIDE)
@@ -126,7 +128,7 @@ def build(base: Path, out: Path, pages: dict | None):
     for pe, (n, r) in zip(decl[3:6], NAMES):
         fill(Paragraph(pe, parent), f"{n}, {r}")
 
-    fill(P[59], f"Certified that 21CSC402P - Project report titled \u201c{sc.TITLE}\u201d is the bonafide work of \u201c"
+    fill(P[59], f"Certified that {COURSE_CERT} report titled \u201c{sc.TITLE}\u201d is the bonafide work of \u201c"
          + ", ".join(f"{n} [{r}]" for n, r in NAMES) + "\u201d who carried out the project work under my supervision. Certified further, that to the best of my knowledge the work reported herein does not form any other "
          "project report or dissertation on the basis of which a degree or award was conferred on an earlier occasion on this or any other candidate.")
     sig = doc.tables[3]._tbl.tr_lst[0].tc_lst[0]
@@ -155,7 +157,7 @@ def build(base: Path, out: Path, pages: dict | None):
     charts = sc.mr.charts(tmp)
     mf.per_class_chart(tmp / "perclass.png")
     demo_png = sc.ROOT / "docs" / "figures" / "demo_predict.png"
-    blocks, appx = sc2.build_all(charts, tmp / "perclass.png", demo_png, sc.ROOT / "docs" / "figures" / "demo_mix.png")
+    blocks, appx = sc2.build_all(charts, tmp / "perclass.png", demo_png, sc.ROOT / "docs" / "figures" / "demo_mix.png", nndl)
     blocks = blocks + [("references",)] + appx
 
     toc, figs, tabs = [], [], []
@@ -363,5 +365,6 @@ if __name__ == "__main__":
     ap.add_argument("--base", default=r"C:\Users\Divyanshi\Downloads\formattedv4.docx")
     ap.add_argument("--out", default=r"C:\Users\Divyanshi\Downloads\Cascaded_CNN_Project_Report.docx")
     ap.add_argument("--pages", default=None)
+    ap.add_argument("--nndl", action="store_true", help="NNDL (21CSC406J) version with extra technical sections")
     a = ap.parse_args()
-    build(Path(a.base), Path(a.out), json.load(open(a.pages, encoding="utf-8-sig")) if a.pages else None)
+    build(Path(a.base), Path(a.out), json.load(open(a.pages, encoding="utf-8-sig")) if a.pages else None, a.nndl)

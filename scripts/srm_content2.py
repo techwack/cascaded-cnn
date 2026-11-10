@@ -38,7 +38,7 @@ def top_confusions(res, k=6):
     return sorted(out, reverse=True)[:k]
 
 
-def chapters_5_6(charts, perclass_png, demo_png):
+def chapters_5_6(charts, perclass_png, demo_png, nndl=False):
     B = []
     A = B.append
     sec = lambda t: A(("sec", t))
@@ -198,7 +198,12 @@ def chapters_5_6(charts, perclass_png, demo_png):
         ["Cascade routing and early exit", "Healthy images exit at Stage 1 and defects reach the correct specialist and offset"],
         ["Pretrained stage output shape", "The EfficientNet-B0 stage outputs the right number of classes"]],
        [5.6, 10.2], (), 10))
-    sec("5.12 Chapter Summary")
+    if nndl:
+        import srm_content_nndl as sn
+        B.extend(sn.tech_sections())
+        sec("5.17 Chapter Summary")
+    else:
+        sec("5.12 Chapter Summary")
     p("The system consists of five small stage networks in two variants, a leak-free data pipeline, a class-weighted training procedure, an evaluation module that attributes every error to a stage and an automated test "
       "suite. The next chapter evaluates it.")
 
@@ -365,6 +370,9 @@ def chapters_5_6(charts, perclass_png, demo_png):
     sub("6.8.3 Threats to Validity")
     p("Internal validity is limited by the single seed and by the fact that hyper-parameters were tuned on one validation split. External validity is limited to one dataset of small crops from one provider; the results "
       "may not transfer to higher-resolution images or other sites. Construct validity is limited by label noise, which cannot be assessed because no second annotation exists.")
+    if nndl:
+        import srm_content_nndl as sn
+        B.extend(sn.discussion_nndl())
     sec("6.9 Chapter Summary")
     p(f"The best cascade reaches {pct(pr['accuracy'])} accuracy with ImageNet pretraining and {pct(dg['accuracy'])} from scratch, with Stage 1 at {pct(binary_acc(R['pretrained']))}. The cascade matches but does not clearly beat a flat classifier, "
       "the family stage is its largest error source, and published 12-class results are higher under protocols that are not comparable with a fixed hold-out.")
@@ -408,12 +416,12 @@ def appendix_blocks(demo_mix_png):
     return B
 
 
-def build_all(charts, perclass_png, demo_png, demo_mix_png):
+def build_all(charts, perclass_png, demo_png, demo_mix_png, nndl=False):
     import srm_content3 as sc3
     old = sc.build_blocks(charts, perclass_png, demo_png)
     i2 = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 2)
     i3_ = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 3)
     i5 = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 5)
     i7 = next(i for i, b in enumerate(old) if b[0] == "chapter" and b[1] == 7)
-    blocks = old[:i2] + sc3.chapter_2() + old[i3_:i5] + chapters_5_6(charts, perclass_png, demo_png) + old[i7:]
+    blocks = old[:i2] + sc3.chapter_2() + old[i3_:i5] + chapters_5_6(charts, perclass_png, demo_png, nndl) + old[i7:]
     return blocks, appendix_blocks(demo_mix_png)
