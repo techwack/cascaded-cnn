@@ -324,19 +324,18 @@ def chapters_5_6(charts, perclass_png, demo_png):
       "hot spots. These are also the cases where a human inspector would hesitate in a 24 x 40 pixel image.")
     sec("6.6 Comparison with Published Work")
     p("The dataset paper reports no model accuracies, and the figures often attributed to it (Random Forest 84%, CNN 92.5%, EfficientNet + SVM 93%) come from later papers that differ in task, protocol and features. "
-      "Table 6.11 therefore places published results next to ours but does not rank them.")
-    rows = [["Paper", "Method", "Task and protocol", "Reported", "Checked"],
-            ["Duranay 2023 [2]", "EfficientNet-B0 features (ImageNet), NCA selection, SVM", "12 classes, 10-fold cross-validation", "93.93% accuracy, 89.82% F1", "Full paper read"],
-            ["Alves et al. 2021 [3]", "Custom CNN with augmentation", "Binary detection; 8 selected classes; cross-validation", "92.5% binary; 78.85% for 8 classes", "Abstract only"],
-            ["Corley et al. 2025 [4]", "Random Forest", "Anomaly classification, split not stated", "84.0%", "Paper text read"],
-            ["Barraz 2025; Gopalakrishnan 2024, as cited in [4]", "Cascading ensemble; NASNet + LSTM", "Not stated", "88%; 85%", "As cited"],
-            ["Millendorf et al. 2020 [1]", "Dataset paper", "-", "No model results", "Full paper read"],
-            ["Ours: pretrained cascade", "EfficientNet-B0 at each of 5 stages", "12 classes, fixed 70/15/15 hold-out", f"{pct(pr['accuracy'])}, macro-F1 {pr['macro_f1']:.3f}", "Our results"],
-            ["Ours: from-scratch cascade", "Five small CNNs", "Same hold-out", f"{pct(dg['accuracy'])}, macro-F1 {dg['macro_f1']:.3f}", "Our results"],
-            ["Ours: Stage 1 only (pretrained)", "Binary triage", "Healthy vs defect, same hold-out", pct(binary_acc(R['pretrained'])), "Our results"],
-            ["Ours: flat CNN / Random Forest", "EfficientNet-B0 / raw pixels", "12 classes, same hold-out", f"{pct(prf['accuracy'])} / {pct(rf['accuracy'])}", "Our results"],
-            ["Ours: Duranay-style baseline", "EfficientNet-B0 features + SVM", "12 classes, same hold-out", f"{pct(ps['accuracy'])}, macro-F1 {ps['macro_f1']:.3f}", "Our results"]]
-    A(("table", "Table 6.11: Published results on InfraredSolarModules and results of this project", rows, [3.3, 3.5, 3.5, 3.1, 2.4], (6,), 9))
+      "Table 6.11 therefore sets each published result next to our result on the same or the closest task and gives the difference, but a difference is only a ranking where the protocols agree, as the last column states.")
+    d = lambda x, y: f"{(x - y) * 100:+.1f} points"
+    rows = [["Published result", "Task and protocol", "Reported", "Our comparable result", "Difference and verdict"],
+            ["Alves et al. 2021 [3] (abstract only)", "Binary healthy vs defect, cross-validation", "92.5%", f"{pct(binary_acc(R['pretrained']))} (Stage 1, pretrained)", f"{d(binary_acc(R['pretrained']), 0.925)}: ours higher; one hold-out run"],
+            ["Alves et al. 2021 [3]", "8 selected classes, cross-validation", "78.85%", f"{pct(pr['accuracy'])} on all 12 classes", f"{d(pr['accuracy'], 0.7885)}: ours higher on a harder task; classes differ"],
+            ["Corley et al. 2025 [4]", "Random Forest, split not stated", "84.0%", f"{pct(pr['accuracy'])} (cascade); {pct(rf['accuracy'])} (our Random Forest)", f"{d(pr['accuracy'], 0.84)}: about equal; our RF is far lower"],
+            ["Barraz 2025; Gopalakrishnan 2024, as cited in [4]", "Not stated", "88%; 85%", f"{pct(pr['accuracy'])}", "Lower than 88%, close to 85%; protocols unknown"],
+            ["Duranay 2023 [2] (full paper read)", "12 classes, 10-fold cross-validation", "93.93% acc., 89.82% F1", f"{pct(pr['accuracy'])} acc., {pr['macro_f1']:.3f} macro-F1", f"{d(pr['accuracy'], 0.9393)}: ours lower; protocols differ"],
+            ["Duranay's method re-run on our split", "12 classes, our fixed hold-out", f"{pct(ps['accuracy'])} acc., {ps['macro_f1']:.3f} F1 (our run)", f"{pct(pr['accuracy'])} acc., {pr['macro_f1']:.3f} macro-F1", f"{d(pr['accuracy'], ps['accuracy'])}: ours higher on identical data"],
+            ["Flat CNN, same pretrained backbone", "12 classes, our fixed hold-out", f"{pct(prf['accuracy'])} acc., {prf['macro_f1']:.3f} F1 (our run)", f"{pct(pr['accuracy'])} acc., {pr['macro_f1']:.3f} macro-F1", f"{d(pr['accuracy'], prf['accuracy'])}: essentially tied"],
+            ["Millendorf et al. 2020 [1]", "Dataset paper", "No model results", "-", "Nothing to compare"]]
+    A(("table", "Table 6.11: Direct comparison of published results with the results of this project", rows, [3.4, 3.2, 2.7, 3.4, 3.3], (5, 6), 8.5))
     bl("Binary triage.", f"Our pretrained Stage 1 reaches {pct(binary_acc(R['pretrained']))} ({pct(binary_acc(R['datagroup']))} from scratch), above the 92.5% of Alves et al. and below the 97.32% of a multi-scale transfer-learning CNN cited by Duranay. It is a single hold-out run, so we claim to be at or slightly above the 92.5% to 93% range and not a new best.")
     bl("12 classes.", f"Our best, {pct(pr['accuracy'])}, is below the published 12-class figures (84.0%, 85% to 88% for ensembles, 93.93%). We did not reach the 93% ceiling or the 95% target stated in the proposal. A Duranay-style pipeline run on our split scored only {pct(ps['accuracy'])}, below our pretrained cascade, which suggests that the gap to 93.93% is largely due to the evaluation protocol rather than to a weaker model; this is a suggestion and not a proof.")
     bl("Why the results are not like for like.", "Duranay uses 10-fold cross-validation, a network trained end to end on the dataset and a supervised feature selection before the cross-validation, so as described, test images can influence these steps. Our test images never do. A raw-pixel Random Forest scores 61.6% on our split against 84.0% in [4], whose protocol is not stated, so part of the gap remains unexplained.")
