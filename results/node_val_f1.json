@@ -1,0 +1,12 @@
+{
+ "From scratch (improved3)|triage": 0.9333148096693527,
+ "From scratch (improved3)|family": 0.7167258448583125,
+ "From scratch (improved3)|electrical": 0.7858633982657687,
+ "From scratch (improved3)|environmental": 0.8216066656082136,
+ "From scratch (improved3)|structural": 0.9546646897810219,
+ "Pretrained EfficientNet-B0|triage": 0.9466562112840784,
+ "Pretrained EfficientNet-B0|family": 0.7956233713951159,
+ "Pretrained EfficientNet-B0|electrical": 0.826307874483946,
+ "Pretrained EfficientNet-B0|environmental": 0.839154697860172,
+ "Pretrained EfficientNet-B0|structural": 0.9772857142857143
+}

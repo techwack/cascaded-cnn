@@ -27,6 +27,7 @@ sys.path.insert(0, str(HERE))
 import importlib.util  # noqa: E402
 
 import srm_content as sc  # noqa: E402
+import srm_content2 as sc2  # noqa: E402
 
 _spec = importlib.util.spec_from_file_location("mf", HERE / "make_final_report.py")
 mf = importlib.util.module_from_spec(_spec)
@@ -139,6 +140,7 @@ def build(base: Path, out: Path, pages: dict | None):
     for i, (n, _) in zip((81, 82, 83), NAMES):
         fill(P[i], n)
     fill(P[87], sc.ABSTRACT)
+    P[87].paragraph_format.first_line_indent = Cm(0)
     fill_segments(P[89], [("Index Terms:", True), (sc.INDEX_TERMS[len("Index Terms:"):], False)])
 
     # ---------------- remove the example chapters ----------------
@@ -153,7 +155,8 @@ def build(base: Path, out: Path, pages: dict | None):
     charts = sc.mr.charts(tmp)
     mf.per_class_chart(tmp / "perclass.png")
     demo_png = sc.ROOT / "docs" / "figures" / "demo_predict.png"
-    blocks = sc.build_blocks(charts, tmp / "perclass.png", demo_png)
+    blocks, appx = sc2.build_all(charts, tmp / "perclass.png", demo_png, sc.ROOT / "docs" / "figures" / "demo_mix.png")
+    blocks = blocks + [("references",)] + appx
 
     toc, figs, tabs = [], [], []
 
@@ -172,6 +175,11 @@ def build(base: Path, out: Path, pages: dict | None):
         if fmt.get("left") is not None:
             pf.left_indent = Cm(fmt["left"])
             pf.first_line_indent = Cm(fmt.get("first", 0))
+        elif proto_key == "body":
+            pf.first_line_indent = Cm(0)  # no first-line indent on body paragraphs
+        if fmt.get("italic"):
+            for r in par.runs:
+                r.italic = True
         return par
 
     def add_table(rows, widths, bold_rows, size):
@@ -227,6 +235,36 @@ def build(base: Path, out: Path, pages: dict | None):
             tabs.append((cap.split(":")[0].replace("Table ", ""), cap.split(": ", 1)[1], cap))
             add_table(rows, widths, bold_rows, size)
             new_par("body", [("", False)], left=0)
+        elif kind == "eq":
+            new_par("body", [(blk[1], False)], align=WD_ALIGN_PARAGRAPH.CENTER, left=0, italic=True)
+        elif kind == "code":
+            _, cap, text = blk
+            new_par("cap", [(cap, True)], keep=True)
+            for line in text.split(chr(10)):
+                par = new_par("body", [(line if line else " ", False)], align=WD_ALIGN_PARAGRAPH.LEFT, left=0.3)
+                par.paragraph_format.line_spacing = 1.0
+                par.paragraph_format.space_after = Pt(0)
+                for r in par.runs:
+                    r.font.name = "Courier New"
+                    r.font.size = Pt(8.5)
+                    rf = r._r.get_or_add_rPr().find(qn("w:rFonts"))
+                    for a_ in ("w:ascii", "w:hAnsi", "w:eastAsia", "w:cs"):
+                        rf.set(qn(a_), "Courier New")
+                pPr = par._p.get_or_add_pPr()
+                shd = OxmlElement("w:shd")
+                shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), "F2F2F2")
+                pPr.append(shd)
+            new_par("body", [("", False)], left=0)
+        elif kind == "appendix":
+            _, letter, title = blk
+            new_par("chnum", [(f"APPENDIX {letter}", True)], **{"break": True, "keep": True})
+            new_par("chtitle", [(title, True)], keep=True)
+            toc.append(("chapter", letter, title, f"APPENDIX {letter}"))
+        elif kind == "references":
+            new_par("refh", [("REFERENCES", True)], **{"break": True, "keep": True, "align": WD_ALIGN_PARAGRAPH.CENTER}).paragraph_format.first_line_indent = Cm(0)
+            toc.append(("front", "", "REFERENCES", "REFERENCES"))
+            for ref in sc.REFERENCES:
+                new_par("ref", [(ref, False)], left=0.9, first=-0.9)
         elif kind == "fig":
             _, path, width, cap = blk
             e = copy.deepcopy(protos["img"])
@@ -241,11 +279,6 @@ def build(base: Path, out: Path, pages: dict | None):
             num = re.match(r"Fig\. (\d+)\.", cap).group(1)
             figs.append((num, cap.split(". ", 1)[1].rstrip("."), cap))
             new_par("body", [("", False)], left=0)
-
-    new_par("refh", [("REFERENCES", True)], **{"break": True, "keep": True, "align": WD_ALIGN_PARAGRAPH.CENTER}).paragraph_format.first_line_indent = Cm(0)
-    toc.append(("front", "", "REFERENCES", "REFERENCES"))
-    for ref in sc.REFERENCES:
-        new_par("ref", [(ref, False)], left=0.9, first=-0.9)
 
     # ---------------- contents, lists, abbreviations ----------------
     def roman(n):
