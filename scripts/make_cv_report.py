@@ -61,7 +61,7 @@ def build(base, out, pages):
             pp = Paragraph(pe, parent)
             fill(pp, "Dr. Sridhar S")
             pass
-    fill_segments(P[41], [("  Date of Submission: ", True, None), ("November 2026", False, None)])
+    fill_segments(P[41], [("  Date of Submission: ", True, None), ("17-11-2026", False, None)])
 
     P[43].paragraph_format.page_break_before = True
     fill(P[44], cc.ABSTRACT)
