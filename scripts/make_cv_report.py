@@ -59,8 +59,8 @@ def build(base, out, pages):
     for pe in sig.findall(qn("w:p")):
         if "FACULTY NAME" in "".join(t.text or "" for t in pe.iter(qn("w:t"))):
             pp = Paragraph(pe, parent)
-            fill(pp, "Dr. [SUPERVISOR NAME]")
-            highlight(pp)
+            fill(pp, "Dr. Sridhar S")
+            pass
     fill_segments(P[41], [("  Date of Submission: ", True, None), ("November 2026", False, None)])
 
     P[43].paragraph_format.page_break_before = True
