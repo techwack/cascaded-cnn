@@ -49,6 +49,8 @@ def build(base, out, pages):
             body.remove(P[i]._p)
     for i, (n, r) in zip((11, 12, 13), NAMES):
         fill(P[i], f"{n} [{r}]")
+    fill(P[14], "Under the guidance of", size=16)
+    fill(P[15], "Dr. Sridhar S", bold=True, size=16)
     fill_segments(P[36], [("This is to certify that the Project Report titled \u201c", False, None), (cc.TITLE, True, None),
                           ("\u201d is a bonafide record of work carried out by the following student(s) as part of the course ", False, None),
                           (cc.COURSE.upper(), True, None), (", during the academic year 2026\u20132027 Odd Semester.", False, None)])
