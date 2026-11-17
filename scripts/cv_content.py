@@ -283,7 +283,10 @@ def blocks(charts, perclass_png):
     p("Duranay [2] uses 10-fold cross-validation, an ImageNet-pretrained network and a supervised feature selection applied before the cross-validation, so, as described, test images can influence these steps. "
       "About 7% of our test images have a near-identical training image, which would inflate cross-validated scores. When the same kind of pipeline is run on our held-out split it scores only "
       f"{pct(ps['accuracy'])}, below our cascade, which suggests that the gap to 93.93% is largely due to the protocol; this is a suggestion, not a proof.")
-    sec("4.7 Discussion")
+    import tech_analysis as ta
+    _t = ta.blocks("4.7", 4, 7)
+    B.extend(_t[:[i for i, b in enumerate(_t) if b[0] == "sub" and b[1].startswith("4.7.4")][0]])
+    sec("4.8 Discussion")
     p("Four observations follow. First, domain knowledge matters: features designed from the physics of the images already beat raw pixels by about nine points, and knowing that brightness is temperature "
       "prevented a harmful augmentation. Second, learned features are better still, and pretrained features are better than learned-from-scratch ones even on 24 x 40 pixel thermal images. Third, the cascade did "
       "not show a clear advantage over a flat network with the same backbone, and it has five times the parameters. Fourth, Grad-CAM and the confusion analysis agree that the weak point is the family decision. "

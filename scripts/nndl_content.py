@@ -226,6 +226,10 @@ def blocks(charts, perclass_png, demo_png):
     p("The errors are explained by the concepts of Chapter 2. High variance of the small family and electrical networks on few training images is reduced by pretraining but not removed. Error propagation between "
       "independently trained stages means that a misrouted image meets a specialist that has never seen its class. And with only 123 to 174 training images, rare classes do not constrain the weights enough, whatever the loss weights.")
 
+    import tech_analysis as ta
+    B.extend(ta.blocks("3.6", 3, 8))
+    B.extend(ta.extra("3.7", 3, 12))
+
     # =================================================================== 4
     A(("chapter", 4, "PROPOSED IMPROVEMENTS / OPTIMIZATION STRATEGIES"))
     p("The analysis points to three weaknesses: the family decision, the rare classes and the cost of the cascade. The following strategies are proposed. They are not implemented in the case study, and the expected "

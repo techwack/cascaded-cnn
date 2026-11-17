@@ -1,0 +1,28 @@
+{
+ "improved3": {
+  "triage": 0.426885376,
+  "family": 1.526169984,
+  "fine_Electrical": 1.526170368,
+  "fine_Environmental": 1.526169984,
+  "fine_Structural": 1.526169856,
+  "input": [
+   1,
+   1,
+   80,
+   48
+  ]
+ },
+ "pretrained": {
+  "triage": 0.11815248,
+  "family": 0.11815376,
+  "fine_Electrical": 0.1181576,
+  "fine_Environmental": 0.11815376,
+  "fine_Structural": 0.11815248,
+  "input": [
+   1,
+   1,
+   40,
+   24
+  ]
+ }
+}
