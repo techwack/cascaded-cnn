@@ -26,6 +26,29 @@ fill, fill_segments, cell_fill, set_fonts = mn.fill, mn.fill_segments, mn.cell_f
 J, C, L, NAMES = mn.J, mn.C, mn.L, mn.NAMES
 
 
+def fix_table(t, widths):
+    """Fixed layout with explicit grid so Word honours the column widths; no inherited paragraph indents."""
+    tbl = t._tbl
+    tblPr = tbl.tblPr
+    for tag in ("w:tblLayout", "w:tblW"):
+        for e in tblPr.findall(qn(tag)):
+            tblPr.remove(e)
+    lay = OxmlElement("w:tblLayout"); lay.set(qn("w:type"), "fixed"); tblPr.append(lay)
+    tw = OxmlElement("w:tblW"); tw.set(qn("w:w"), str(int(sum(widths) * 567))); tw.set(qn("w:type"), "dxa"); tblPr.append(tw)
+    grid = tbl.tblGrid
+    for g in list(grid):
+        grid.remove(g)
+    for w in widths:
+        g = OxmlElement("w:gridCol"); g.set(qn("w:w"), str(int(w * 567))); grid.append(g)
+    for row in t.rows:
+        for ci, cell in enumerate(row.cells):
+            cell.width = Cm(widths[ci])
+            for par in cell.paragraphs:
+                pf = par.paragraph_format
+                pf.left_indent = Cm(0); pf.right_indent = Cm(0); pf.first_line_indent = Cm(0)
+                pf.space_before = Pt(2); pf.space_after = Pt(2)
+
+
 def highlight(par):
     for r in par.runs:
         h = OxmlElement("w:highlight"); h.set(qn("w:val"), "yellow")
@@ -102,6 +125,7 @@ def build(base, out, pages):
         b.set(qn("w:val"), "single"); b.set(qn("w:sz"), "4"); b.set(qn("w:space"), "0"); b.set(qn("w:color"), "000000")
         borders.append(b)
     ab._tbl.tblPr.append(borders)
+    fix_table(ab, [3.5, 11.5])
 
     # drop list of figures / list of tables (the CV format has none)
     P[77]._p.getparent().remove(P[77]._p)
@@ -174,6 +198,7 @@ def build(base, out, pages):
                     shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), "E7E6E6")
                     cell._tc.get_or_add_tcPr().append(shd)
         t.rows[0]._tr.get_or_add_trPr().append(OxmlElement("w:tblHeader"))
+        fix_table(t, widths)
 
     for blk in blocks:
         kind = blk[0]
