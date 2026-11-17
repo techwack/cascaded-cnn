@@ -1,0 +1,10 @@
+{
+ "model": "41 hand-crafted features + standardised RBF SVM",
+ "n_features": 41,
+ "C": 100,
+ "accuracy": 0.6993333333333334,
+ "macro_f1": 0.5015156919646603,
+ "kappa": 0.5746041507693439,
+ "binary_accuracy": 0.8533333333333334,
+ "seconds": 156
+}
