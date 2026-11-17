@@ -138,13 +138,16 @@ def build(base, out, pages):
         pf.line_spacing = ls
         pf.space_after = Pt(sa)
         pf.space_before = Pt(sb)
-        pf.left_indent = Cm(left) if left is not None else None
+        pf.left_indent = Cm(left if left is not None else 0)
+        pf.right_indent = Cm(0)
         pf.first_line_indent = Cm(first) if first is not None else Cm(0)
         pf.keep_with_next = keep
         pf.page_break_before = brk
         return par
 
     def add_table(rows, widths, bold_rows, size):
+        if sum(widths) > 15.2:
+            widths = [w * 15.2 / sum(widths) for w in widths]
         t = doc.add_table(rows=len(rows), cols=len(rows[0]))
         if has_grid:
             t.style = doc.styles["Table Grid"]
@@ -203,7 +206,7 @@ def build(base, out, pages):
             ip = Paragraph(e, parent)
             for r in list(e.findall(qn("w:r"))):
                 e.remove(r)
-            ip.add_run().add_picture(str(path), width=Cm(width))
+            ip.add_run().add_picture(str(path), width=Cm(min(width, 15.0)))
             ip.alignment = C
             ip.paragraph_format.line_spacing = 1.0
             ip.paragraph_format.space_after = Pt(2)
@@ -246,6 +249,10 @@ def build(base, out, pages):
                 it = OxmlElement("w:instrText"); it.set("{http://www.w3.org/XML/1998/namespace}space", "preserve"); it.text = " PAGE "; r.append(it)
             par._p.append(r)
 
+    from docx.shared import Inches
+    for sec_ in doc.sections:
+        sec_.left_margin, sec_.right_margin = Inches(1.25), Inches(1.0)
+        sec_.top_margin, sec_.bottom_margin = Inches(1.0), Inches(1.0)
     footer_page(doc.sections[0])
     footer_page(doc.sections[1])
     doc.core_properties.title = cc.TITLE
